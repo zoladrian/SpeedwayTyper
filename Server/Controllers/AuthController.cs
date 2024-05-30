@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using SpeedwayTyperApp.Server.Models;
 using SpeedwayTyperApp.Server.Services;
@@ -21,7 +22,8 @@ namespace SpeedwayTyperApp.Server.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginModel model)
+        [AllowAnonymous]
+        public async Task<IActionResult> Login([FromBody] Login model)
         {
             var user = await _userManager.FindByNameAsync(model.Username);
             if (user != null && await _userManager.CheckPasswordAsync(user, model.Password))
@@ -32,11 +34,5 @@ namespace SpeedwayTyperApp.Server.Controllers
 
             return Unauthorized();
         }
-    }
-
-    public class LoginModel
-    {
-        public string Username { get; set; }
-        public string Password { get; set; }
     }
 }
