@@ -1,4 +1,4 @@
-﻿namespace SpeedwayTyperApp.Server.Models
+﻿namespace SpeedwayTyperApp.Shared.Models
 {
     public class Team
     {

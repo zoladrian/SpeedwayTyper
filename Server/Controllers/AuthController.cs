@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using SpeedwayTyperApp.Server.Models;
+using SpeedwayTyperApp.Shared.Models;
 using SpeedwayTyperApp.Server.Services;
 
 namespace SpeedwayTyperApp.Server.Controllers

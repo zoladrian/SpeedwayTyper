@@ -1,4 +1,4 @@
-﻿using SpeedwayTyperApp.Server.Models;
+﻿using SpeedwayTyperApp.Shared.Models;
 using SpeedwayTyperApp.Server.Repositories;
 using SpeedwayTyperApp.Server.Services;
 

@@ -1,0 +1,37 @@
+﻿@page "/login"
+@using SpeedwayTyperApp.Shared.Models
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<EditForm Model="loginModel" OnValidSubmit="HandleLogin">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <RadzenTextBox @bind-Value="loginModel.Username" Placeholder="Username" />
+    <RadzenPassword @bind-Value="loginModel.Password" Placeholder="Password" />
+    <RadzenButton ButtonType="ButtonType.Submit" Text="Login" />
+</EditForm>
+
+@code {
+    private Login loginModel = new Login();
+
+    private async Task HandleLogin()
+    {
+        var response = await Http.PostAsJsonAsync("api/Auth/login", loginModel);
+        if (response.IsSuccessStatusCode)
+        {
+            var result = await response.Content.ReadFromJsonAsync<LoginResult>();
+            // Store the token and navigate to the matches page
+            // Use a proper authentication state provider or token storage mechanism
+            Navigation.NavigateTo("/matches");
+        }
+        else
+        {
+            // Handle error (show message to user)
+        }
+    }
+
+    public class LoginResult
+    {
+        public string Token { get; set; }
+    }
+}

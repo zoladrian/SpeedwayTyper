@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 
-namespace SpeedwayTyperApp.Server.Models
+namespace SpeedwayTyperApp.Shared.Models
 {
     public class User : IdentityUser
     {

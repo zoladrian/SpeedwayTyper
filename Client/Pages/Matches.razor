@@ -1,0 +1,30 @@
+﻿@page "/matches"
+@using SpeedwayTyperApp.Shared.Models
+@inject HttpClient Http
+
+<RadzenTabs>
+    @foreach (var round in _rounds)
+    {
+        <RadzenTabsItem Text=@($"Round {round}")>
+            <RadzenGrid Data="@_matches.Where(m => m.Round == round)">
+                <Columns>
+                    <RadzenGridColumn TItem="Match" Property="HostTeam.Name" Title="Host Team" />
+                    <RadzenGridColumn TItem="Match" Property="GuestTeam.Name" Title="Guest Team" />
+                    <RadzenGridColumn TItem="Match" Property="HostTeamScore" Title="Host Score" />
+                    <RadzenGridColumn TItem="Match" Property="GuestTeamScore" Title="Guest Score" />
+                </Columns>
+            </RadzenGrid>
+        </RadzenTabsItem>
+    }
+</RadzenTabs>
+
+@code {
+    private List<Match> _matches = new List<Match>();
+    private List<int> _rounds = new List<int>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _matches = await Http.GetFromJsonAsync<List<Match>>("api/Matches");
+        _rounds = _matches.Select(m => m.Round).Distinct().ToList();
+    }
+}

@@ -1,5 +1,5 @@
 ﻿using SpeedwayTyperApp.Server.DbContexts;
-using SpeedwayTyperApp.Server.Models;
+using SpeedwayTyperApp.Shared.Models;
 
 namespace SpeedwayTyperApp.Server.Repositories
 {

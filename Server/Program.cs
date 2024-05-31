@@ -2,10 +2,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using SpeedwayTyperApp.Server.DbContexts;
-using SpeedwayTyperApp.Server.Models;
+using SpeedwayTyperApp.Shared.Models;
 using SpeedwayTyperApp.Server.Services;
 using System.Text;
+using SpeedwayTyperApp.Server.DbContexts;
 
 var builder = WebApplication.CreateBuilder(args);
 
