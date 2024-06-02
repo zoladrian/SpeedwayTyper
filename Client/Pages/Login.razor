@@ -3,13 +3,22 @@
 @inject HttpClient Http
 @inject NavigationManager Navigation
 
-<EditForm Model="loginModel" OnValidSubmit="HandleLogin">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
-    <RadzenTextBox @bind-Value="loginModel.Username" Placeholder="Username" />
-    <RadzenPassword @bind-Value="loginModel.Password" Placeholder="Password" />
-    <RadzenButton ButtonType="ButtonType.Submit" Text="Login" />
-</EditForm>
+<div class="login-box">
+    <div class="login-container">
+        <h3>Login</h3>
+        <EditForm Model="loginModel" OnValidSubmit="HandleLogin">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+            <div class="form-group">
+                <RadzenTextBox @bind-Value="loginModel.Username" Placeholder="Username" class="form-control" />
+            </div>
+            <div class="form-group">
+                <RadzenPassword @bind-Value="loginModel.Password" Placeholder="Password" class="form-control" />
+            </div>
+            <RadzenButton ButtonType="ButtonType.Submit" Text="Login" class="btn" />
+        </EditForm>
+    </div>
+</div>
 
 @code {
     private LoginModel loginModel = new LoginModel();
