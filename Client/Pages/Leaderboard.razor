@@ -2,13 +2,17 @@
 @using SpeedwayTyperApp.Shared.Models
 @inject HttpClient Http
 
-<RadzenGrid Data="@_users">
-    <Columns>
-        <RadzenGridColumn TItem="User" Property="UserName" Title="Username" />
-        <RadzenGridColumn TItem="User" Property="TotalPoints" Title="Points" />
-        <RadzenGridColumn TItem="User" Property="AccurateMatchResults" Title="Accurate Results" />
-    </Columns>
-</RadzenGrid>
+<div class="container">
+    <div class="banner"></div>
+    <h3>Tabela wyników</h3>
+    <RadzenGrid Data="@_users" class="custom-grid">
+        <Columns>
+            <RadzenGridColumn TItem="User" Property="UserName" Title="Nazwa użytkownika" />
+            <RadzenGridColumn TItem="User" Property="TotalPoints" Title="Punkty" />
+            <RadzenGridColumn TItem="User" Property="AccurateMatchResults" Title="Dokładne wyniki" />
+        </Columns>
+    </RadzenGrid>
+</div>
 
 @code {
     private List<User> _users = new List<User>();

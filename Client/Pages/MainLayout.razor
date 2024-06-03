@@ -1,18 +1,45 @@
 ﻿@inherits LayoutComponentBase
-@using Radzen
-@using Radzen.Blazor
+@using Microsoft.AspNetCore.Components.Authorization
 
-<RadzenHeader>
-    <RadzenHeaderRow>
-        <RadzenHeaderColumn Width="100%">
-            <h1>Speedway Typer</h1>
-            <a href="/login">Login</a>
-        </RadzenHeaderColumn>
-    </RadzenHeaderRow>
-</RadzenHeader>
+<CascadingAuthenticationState>
+    <div class="page">
+        <div class="content">
+            @Body
+        </div>
+    </div>
+</CascadingAuthenticationState>
 
-<main>
-    <article>
-        @Body
-    </article>
-</main>
+<style>
+    .page {
+        display: flex;
+    }
+
+    .content {
+        flex-grow: 1;
+        padding: 20px;
+        background-color: #f0f0f0; 
+    }
+
+    .nav {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .nav-link {
+        margin: 5px 0;
+        padding: 10px;
+        background-color: #ffffff; 
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        text-align: center;
+        text-decoration: none;
+        color: #000;
+        cursor: pointer;
+    }
+
+        .nav-link:hover {
+            background-color: #ff4c4c; 
+            color: #fff;
+        }
+</style>

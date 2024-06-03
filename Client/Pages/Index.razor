@@ -1,7 +1,36 @@
 ﻿@page "/"
+@inject NavigationManager Navigation
 
-<h1>Hello, world!</h1>
+<div class="container">
+    <div class="banner"></div>
+    <div class="row">
+        <div class="col-9">
+            <h3>Witamy w Speedway Typer</h3>
+            <p>Tutaj możesz zarządzać swoimi meczami i przeglądać tabelę wyników.</p>
+        </div>
+        <div class="col-3">
+            <nav class="nav flex-column">
+                <a class="nav-link" @onclick="NavigateToMatches">Mecze</a>
+                <a class="nav-link" @onclick="NavigateToLeaderboard">Tabela wyników</a>
+                <a class="nav-link" @onclick="NavigateToChangePassword">Zmień hasło</a>
+            </nav>
+        </div>
+    </div>
+</div>
 
-<p>Welcome to your new app.</p>
+@code {
+    private void NavigateToMatches()
+    {
+        Navigation.NavigateTo("/matches");
+    }
 
-<a href="/login">Go to Login</a>
+    private void NavigateToLeaderboard()
+    {
+        Navigation.NavigateTo("/leaderboard");
+    }
+
+    private void NavigateToChangePassword()
+    {
+        Navigation.NavigateTo("/change-password");
+    }
+}

@@ -1,5 +1,41 @@
 ﻿@inherits LayoutComponentBase
 
-<main>
-    @Body
-</main>
+<div class="page">
+    <div class="content">
+        @Body
+    </div>
+</div>
+
+<style>
+    .page {
+        display: flex;
+    }
+
+    .content {
+        flex-grow: 1;
+        padding: 20px;
+    }
+
+    .nav {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .nav-link {
+        margin: 5px 0;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        text-align: center;
+        text-decoration: none;
+        color: #000;
+        cursor: pointer;
+    }
+
+        .nav-link:hover {
+            background-color: #007bff;
+            color: #fff;
+        }
+</style>

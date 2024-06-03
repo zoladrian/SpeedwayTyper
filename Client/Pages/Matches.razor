@@ -2,21 +2,25 @@
 @using SpeedwayTyperApp.Shared.Models
 @inject HttpClient Http
 
-<RadzenTabs>
-    @foreach (var round in _rounds)
-    {
-        <RadzenTabsItem Text=@($"Round {round}")>
-            <RadzenGrid Data="@_matches.Where(m => m.Round == round)">
-                <Columns>
-                    <RadzenGridColumn TItem="Match" Property="HostTeam.Name" Title="Host Team" />
-                    <RadzenGridColumn TItem="Match" Property="GuestTeam.Name" Title="Guest Team" />
-                    <RadzenGridColumn TItem="Match" Property="HostTeamScore" Title="Host Score" />
-                    <RadzenGridColumn TItem="Match" Property="GuestTeamScore" Title="Guest Score" />
-                </Columns>
-            </RadzenGrid>
-        </RadzenTabsItem>
-    }
-</RadzenTabs>
+<div class="container">
+    <div class="banner"></div>
+    <h3>Mecze</h3>
+    <RadzenTabs>
+        @foreach (var round in _rounds)
+        {
+            <RadzenTabsItem Text=@($"Runda {round}")>
+                <RadzenGrid Data="@_matches.Where(m => m.Round == round)" class="custom-grid">
+                    <Columns>
+                        <RadzenGridColumn TItem="Match" Property="HostTeam.Name" Title="Drużyna gospodarzy" />
+                        <RadzenGridColumn TItem="Match" Property="GuestTeam.Name" Title="Drużyna gości" />
+                        <RadzenGridColumn TItem="Match" Property="HostTeamScore" Title="Wynik gospodarzy" />
+                        <RadzenGridColumn TItem="Match" Property="GuestTeamScore" Title="Wynik gości" />
+                    </Columns>
+                </RadzenGrid>
+            </RadzenTabsItem>
+        }
+    </RadzenTabs>
+</div>
 
 @code {
     private List<Match> _matches = new List<Match>();

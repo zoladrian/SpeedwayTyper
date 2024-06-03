@@ -2,20 +2,21 @@
 @using SpeedwayTyperApp.Shared.Models
 @inject HttpClient Http
 @inject NavigationManager Navigation
+@inject CustomAuthStateProvider AuthStateProvider
 
 <div class="login-box">
     <div class="login-container">
-        <h3>Login</h3>
+        <h3>Zaloguj</h3>
         <EditForm Model="loginModel" OnValidSubmit="HandleLogin">
             <DataAnnotationsValidator />
             <ValidationSummary />
             <div class="form-group">
-                <RadzenTextBox @bind-Value="loginModel.Username" Placeholder="Username" class="form-control" />
+                <RadzenTextBox @bind-Value="loginModel.Username" Placeholder="Nazwa użytkownika" class="form-control" />
             </div>
             <div class="form-group">
-                <RadzenPassword @bind-Value="loginModel.Password" Placeholder="Password" class="form-control" />
+                <RadzenPassword @bind-Value="loginModel.Password" Placeholder="Hasło" class="form-control" />
             </div>
-            <RadzenButton ButtonType="ButtonType.Submit" Text="Login" class="btn" />
+            <RadzenButton ButtonType="ButtonType.Submit" Text="Zaloguj" class="btn" />
         </EditForm>
     </div>
 </div>
@@ -29,9 +30,9 @@
         if (response.IsSuccessStatusCode)
         {
             var result = await response.Content.ReadFromJsonAsync<LoginResult>();
-            // Store the token and navigate to the matches page
-            // Use a proper authentication state provider or token storage mechanism
-            Navigation.NavigateTo("/matches");
+            // Store the token and mark user as authenticated
+            AuthStateProvider.MarkUserAsAuthenticated(loginModel.Username);
+            Navigation.NavigateTo("/");
         }
         else
         {
