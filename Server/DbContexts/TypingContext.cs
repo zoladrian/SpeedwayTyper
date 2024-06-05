@@ -4,11 +4,11 @@ using SpeedwayTyperApp.Shared.Models;
 
 namespace SpeedwayTyperApp.Server.DbContexts
 {
-    public class TypingContext : IdentityDbContext<User>
+    public class TypingContext : IdentityDbContext<UserModel>
     {
-        public DbSet<Team> Teams { get; set; }
-        public DbSet<Match> Matches { get; set; }
-        public DbSet<Prediction> Predictions { get; set; }
+        public DbSet<TeamModel> Teams { get; set; }
+        public DbSet<MatchModel> Matches { get; set; }
+        public DbSet<PredictionModel> Predictions { get; set; }
 
         public TypingContext(DbContextOptions<TypingContext> options) : base(options)
         {
@@ -18,13 +18,13 @@ namespace SpeedwayTyperApp.Server.DbContexts
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.Entity<Match>()
+            modelBuilder.Entity<MatchModel>()
                 .HasOne(m => m.HostTeam)
                 .WithMany()
                 .HasForeignKey(m => m.HostTeamId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<Match>()
+            modelBuilder.Entity<MatchModel>()
                 .HasOne(m => m.GuestTeam)
                 .WithMany()
                 .HasForeignKey(m => m.GuestTeamId)

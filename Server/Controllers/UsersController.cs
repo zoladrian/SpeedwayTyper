@@ -42,7 +42,7 @@ namespace SpeedwayTyperApp.Server.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(string id, [FromBody] User user)
+        public async Task<IActionResult> UpdateUser(string id, [FromBody] UserModel user)
         {
             if (!id.Equals(user.Id))
             {

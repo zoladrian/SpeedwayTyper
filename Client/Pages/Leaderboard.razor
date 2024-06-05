@@ -7,18 +7,18 @@
     <h3>Tabela wyników</h3>
     <RadzenGrid Data="@_users" class="custom-grid">
         <Columns>
-            <RadzenGridColumn TItem="User" Property="UserName" Title="Nazwa użytkownika" />
-            <RadzenGridColumn TItem="User" Property="TotalPoints" Title="Punkty" />
-            <RadzenGridColumn TItem="User" Property="AccurateMatchResults" Title="Dokładne wyniki" />
+            <RadzenGridColumn TItem="UserModel" Property="UserName" Title="Nazwa użytkownika" />
+            <RadzenGridColumn TItem="UserModel" Property="TotalPoints" Title="Punkty" />
+            <RadzenGridColumn TItem="UserModel" Property="AccurateMatchResults" Title="Dokładne wyniki" />
         </Columns>
     </RadzenGrid>
 </div>
 
 @code {
-    private List<User> _users = new List<User>();
+    private List<UserModel> _users = new List<UserModel>();
 
     protected override async Task OnInitializedAsync()
     {
-        _users = await Http.GetFromJsonAsync<List<User>>("api/Users");
+        _users = await Http.GetFromJsonAsync<List<UserModel>>("api/Users");
     }
 }

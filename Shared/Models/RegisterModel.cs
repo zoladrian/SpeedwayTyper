@@ -1,6 +1,6 @@
 ﻿namespace SpeedwayTyperApp.Shared.Models
 {
-    public class Register
+    public class RegisterModel
     {
         public string Username { get; set; }
         public string Email { get; set; }

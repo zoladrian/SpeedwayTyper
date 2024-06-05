@@ -10,17 +10,17 @@ namespace SpeedwayTyperApp.Server.Controllers
     [Authorize(Roles = "Admin")]
     public class AdminController : ControllerBase
     {
-        private readonly UserManager<User> _userManager;
+        private readonly UserManager<UserModel> _userManager;
 
-        public AdminController(UserManager<User> userManager)
+        public AdminController(UserManager<UserModel> userManager)
         {
             _userManager = userManager;
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] Register model)
+        public async Task<IActionResult> Register([FromBody] RegisterModel model)
         {
-            var user = new User { UserName = model.Username, Email = model.Email };
+            var user = new UserModel { UserName = model.Username, Email = model.Email };
             var result = await _userManager.CreateAsync(user, model.Password);
             if (result.Succeeded)
             {

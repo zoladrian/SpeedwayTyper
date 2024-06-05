@@ -13,7 +13,7 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<TypingContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddIdentity<User, IdentityRole>()
+builder.Services.AddIdentity<UserModel, IdentityRole>()
     .AddEntityFrameworkStores<TypingContext>()
     .AddDefaultTokenProviders();
 
@@ -102,7 +102,7 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
     try
     {
-        var userManager = services.GetRequiredService<UserManager<User>>();
+        var userManager = services.GetRequiredService<UserManager<UserModel>>();
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
         SeedData.Initialize(userManager, roleManager).Wait();
     }
@@ -117,7 +117,7 @@ app.Run();
 
 public static class SeedData
 {
-    public static async Task Initialize(UserManager<User> userManager, RoleManager<IdentityRole> roleManager)
+    public static async Task Initialize(UserManager<UserModel> userManager, RoleManager<IdentityRole> roleManager)
     {
         var adminRole = new IdentityRole("Admin");
 
@@ -129,7 +129,7 @@ public static class SeedData
         var adminUser = await userManager.FindByNameAsync("admin");
         if (adminUser == null)
         {
-            adminUser = new User
+            adminUser = new UserModel
             {
                 UserName = "admin",
                 Email = "admin@example.com",

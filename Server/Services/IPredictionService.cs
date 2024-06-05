@@ -4,9 +4,9 @@ namespace SpeedwayTyperApp.Server.Services
 {
     public interface IPredictionService
     {
-        Task<int> CalculatePointsAsync(Prediction prediction);
-        Task AddPredictionAsync(Prediction prediction);
-        Task UpdatePredictionAsync(Prediction prediction);
+        Task<int> CalculatePointsAsync(PredictionModel prediction);
+        Task AddPredictionAsync(PredictionModel prediction);
+        Task UpdatePredictionAsync(PredictionModel prediction);
         Task UpdateUserPointsAsync(string userId);
     }
 }

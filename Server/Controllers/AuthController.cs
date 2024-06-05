@@ -10,11 +10,11 @@ namespace SpeedwayTyperApp.Server.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-        private readonly UserManager<User> _userManager;
-        private readonly SignInManager<User> _signInManager;
+        private readonly UserManager<UserModel> _userManager;
+        private readonly SignInManager<UserModel> _signInManager;
         private readonly ITokenService _tokenService;
 
-        public AuthController(UserManager<User> userManager, SignInManager<User> signInManager, ITokenService tokenService)
+        public AuthController(UserManager<UserModel> userManager, SignInManager<UserModel> signInManager, ITokenService tokenService)
         {
             _userManager = userManager;
             _signInManager = signInManager;

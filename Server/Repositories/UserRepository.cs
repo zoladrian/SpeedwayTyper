@@ -12,12 +12,12 @@ namespace SpeedwayTyperApp.Server.Repositories
             _context = context;
         }
 
-        public async Task<User> GetUserByIdAsync(string userId)
+        public async Task<UserModel> GetUserByIdAsync(string userId)
         {
             return await _context.Users.FindAsync(userId);
         }
 
-        public async Task UpdateUserAsync(User user)
+        public async Task UpdateUserAsync(UserModel user)
         {
             _context.Users.Update(user);
             await _context.SaveChangesAsync();

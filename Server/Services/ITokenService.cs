@@ -4,6 +4,6 @@ namespace SpeedwayTyperApp.Server.Services
 {
     public interface ITokenService
     {
-        string GenerateToken(User user);
+        string GenerateToken(UserModel user);
     }
 }

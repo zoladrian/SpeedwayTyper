@@ -13,18 +13,18 @@ namespace SpeedwayTyperApp.Server.Repositories
             _context = context;
         }
 
-        public async Task<IEnumerable<Prediction>> GetPredictionsByUserAsync(string userId)
+        public async Task<IEnumerable<PredictionModel>> GetPredictionsByUserAsync(string userId)
         {
             return await _context.Predictions.Where(p => p.UserId.Equals(userId)).ToListAsync();
         }
 
-        public async Task AddPredictionAsync(Prediction prediction)
+        public async Task AddPredictionAsync(PredictionModel prediction)
         {
             _context.Predictions.Add(prediction);
             await _context.SaveChangesAsync();
         }
 
-        public async Task UpdatePredictionAsync(Prediction prediction)
+        public async Task UpdatePredictionAsync(PredictionModel prediction)
         {
             _context.Predictions.Update(prediction);
             await _context.SaveChangesAsync();

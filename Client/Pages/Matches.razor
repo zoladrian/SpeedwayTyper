@@ -11,10 +11,10 @@
             <RadzenTabsItem Text=@($"Runda {round}")>
                 <RadzenGrid Data="@_matches.Where(m => m.Round == round)" class="custom-grid">
                     <Columns>
-                        <RadzenGridColumn TItem="Match" Property="HostTeam.Name" Title="Drużyna gospodarzy" />
-                        <RadzenGridColumn TItem="Match" Property="GuestTeam.Name" Title="Drużyna gości" />
-                        <RadzenGridColumn TItem="Match" Property="HostTeamScore" Title="Wynik gospodarzy" />
-                        <RadzenGridColumn TItem="Match" Property="GuestTeamScore" Title="Wynik gości" />
+                        <RadzenGridColumn TItem="MatchModel" Property="HostTeam.Name" Title="Drużyna gospodarzy" />
+                        <RadzenGridColumn TItem="MatchModel" Property="GuestTeam.Name" Title="Drużyna gości" />
+                        <RadzenGridColumn TItem="MatchModel" Property="HostTeamScore" Title="Wynik gospodarzy" />
+                        <RadzenGridColumn TItem="MatchModel" Property="GuestTeamScore" Title="Wynik gości" />
                     </Columns>
                 </RadzenGrid>
             </RadzenTabsItem>
@@ -23,12 +23,12 @@
 </div>
 
 @code {
-    private List<Match> _matches = new List<Match>();
+    private List<MatchModel> _matches = new List<MatchModel>();
     private List<int> _rounds = new List<int>();
 
     protected override async Task OnInitializedAsync()
     {
-        _matches = await Http.GetFromJsonAsync<List<Match>>("api/Matches");
+        _matches = await Http.GetFromJsonAsync<List<MatchModel>>("api/Matches");
         _rounds = _matches.Select(m => m.Round).Distinct().ToList();
     }
 }

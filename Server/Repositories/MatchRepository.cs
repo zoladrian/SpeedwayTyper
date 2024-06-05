@@ -13,24 +13,24 @@ namespace SpeedwayTyperApp.Server.Repositories
             _context = context;
         }
 
-        public async Task<IEnumerable<Match>> GetAllMatchesAsync()
+        public async Task<IEnumerable<MatchModel>> GetAllMatchesAsync()
         {
             return await _context.Matches.Include(m => m.HostTeam).Include(m => m.GuestTeam).ToListAsync();
         }
 
-        public async Task<Match> GetMatchByIdAsync(int matchId)
+        public async Task<MatchModel> GetMatchByIdAsync(int matchId)
         {
             return await _context.Matches.Include(m => m.HostTeam).Include(m => m.GuestTeam)
                                          .FirstOrDefaultAsync(m => m.MatchId == matchId);
         }
 
-        public async Task AddMatchAsync(Match match)
+        public async Task AddMatchAsync(MatchModel match)
         {
             _context.Matches.Add(match);
             await _context.SaveChangesAsync();
         }
 
-        public async Task UpdateMatchAsync(Match match)
+        public async Task UpdateMatchAsync(MatchModel match)
         {
             _context.Matches.Update(match);
             await _context.SaveChangesAsync();
