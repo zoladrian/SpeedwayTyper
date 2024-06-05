@@ -1,34 +1,87 @@
 ﻿using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.JSInterop;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace SpeedwayTyperApp.Client.Services
 {
     public class CustomAuthStateProvider : AuthenticationStateProvider
     {
-        public override Task<AuthenticationState> GetAuthenticationStateAsync()
-        {
-            var identity = new ClaimsIdentity();
-            var user = new ClaimsPrincipal(identity);
+        private readonly IJSRuntime _jsRuntime;
+        private ClaimsPrincipal _anonymous = new ClaimsPrincipal(new ClaimsIdentity());
 
-            return Task.FromResult(new AuthenticationState(user));
+        public CustomAuthStateProvider(IJSRuntime jsRuntime)
+        {
+            _jsRuntime = jsRuntime;
         }
 
-        public void MarkUserAsAuthenticated(string username)
+        public override async Task<AuthenticationState> GetAuthenticationStateAsync()
         {
-            var identity = new ClaimsIdentity(new[]
+            var token = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", "authToken");
+            if (string.IsNullOrEmpty(token))
             {
-                new Claim(ClaimTypes.Name, username)
-            }, "apiauth_type");
+                return new AuthenticationState(_anonymous);
+            }
 
+            var claims = ParseClaimsFromJwt(token);
+            var expiry = claims.FirstOrDefault(c => c.Type == "exp")?.Value;
+            if (expiry != null)
+            {
+                var exp = DateTimeOffset.FromUnixTimeSeconds(long.Parse(expiry));
+                if (exp.UtcDateTime <= DateTime.UtcNow)
+                {
+                    await MarkUserAsLoggedOut();
+                    return new AuthenticationState(_anonymous);
+                }
+            }
+
+            var identity = new ClaimsIdentity(claims, "jwt");
+            var user = new ClaimsPrincipal(identity);
+            return new AuthenticationState(user);
+        }
+
+        public async Task MarkUserAsAuthenticated(string token)
+        {
+            await _jsRuntime.InvokeVoidAsync("localStorage.setItem", "authToken", token);
+            var claims = ParseClaimsFromJwt(token);
+            var identity = new ClaimsIdentity(claims, "jwt");
             var user = new ClaimsPrincipal(identity);
             NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(user)));
         }
 
-        public void MarkUserAsLoggedOut()
+        public async Task MarkUserAsLoggedOut()
         {
-            var identity = new ClaimsIdentity();
-            var user = new ClaimsPrincipal(identity);
+            await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "authToken");
+            var user = _anonymous;
             NotifyAuthenticationStateChanged(Task.FromResult(new AuthenticationState(user)));
+        }
+
+        private IEnumerable<Claim> ParseClaimsFromJwt(string jwt)
+        {
+            var claims = new List<Claim>();
+            var payload = jwt.Split('.')[1];
+            var jsonBytes = ParseBase64WithoutPadding(payload);
+            var keyValuePairs = JsonSerializer.Deserialize<Dictionary<string, object>>(jsonBytes);
+
+            keyValuePairs.TryGetValue(ClaimTypes.Name, out object name);
+            keyValuePairs.TryGetValue(ClaimTypes.NameIdentifier, out object nameId);
+            keyValuePairs.TryGetValue(ClaimTypes.Role, out object roles);
+
+            if (name != null) claims.Add(new Claim(ClaimTypes.Name, name.ToString()));
+            if (nameId != null) claims.Add(new Claim(ClaimTypes.NameIdentifier, nameId.ToString()));
+            if (roles != null) claims.Add(new Claim(ClaimTypes.Role, roles.ToString()));
+
+            return claims;
+        }
+
+        private byte[] ParseBase64WithoutPadding(string base64)
+        {
+            switch (base64.Length % 4)
+            {
+                case 2: base64 += "=="; break;
+                case 3: base64 += "="; break;
+            }
+            return Convert.FromBase64String(base64);
         }
     }
 }
