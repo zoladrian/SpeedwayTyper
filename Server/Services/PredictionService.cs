@@ -29,10 +29,10 @@ namespace SpeedwayTyperApp.Server.Services
             var predictedDifference = Math.Abs(prediction.HostTeamPredictedScore - prediction.GuestTeamPredictedScore);
             var actualDifference = Math.Abs(match.HostTeamScore.Value - match.GuestTeamScore.Value);
             int totalPoints = match.HostTeamScore.Value + match.GuestTeamScore.Value;
-            bool drawResult = match.HostTeamScore.Value == match.GuestTeamScore.Value;
+            bool typicalResult = (match.HostTeamScore.Value + match.GuestTeamScore.Value) == 90;
             int points = 0;
 
-            if (predictedDifference == actualDifference || drawResult)
+            if (predictedDifference == actualDifference || typicalResult)
             {
                 if (totalPoints == 0)
                 {
@@ -55,10 +55,10 @@ namespace SpeedwayTyperApp.Server.Services
                 }
             }
             else if ((prediction.HostTeamPredictedScore > prediction.GuestTeamPredictedScore &&
-                 match.HostTeamScore <= match.GuestTeamScore) ||
+                 match.HostTeamScore < match.GuestTeamScore) ||
                 (prediction.HostTeamPredictedScore < prediction.GuestTeamPredictedScore &&
-                 match.HostTeamScore >= match.GuestTeamScore)||
-                 (prediction.HostTeamPredictedScore == prediction.GuestTeamPredictedScore) && !drawResult)
+                 match.HostTeamScore > match.GuestTeamScore)||
+                 (prediction.HostTeamPredictedScore == prediction.GuestTeamPredictedScore))
             {
                 points = 0;
             }
@@ -90,53 +90,6 @@ namespace SpeedwayTyperApp.Server.Services
             }
             return points;
         }
-    
-        //    int points;
-
-        //    if (typicalResult)
-        //    {
-        //        points = 0;
-        //    }
-        //    else if(totalPoints==0)
-        //    {
-        //        points = 20;
-        //        return points;
-        //    }
-        //    else
-        //    {
-        //        points = 90 - totalPoints;
-        //    }
-        //    if (predictedDifference == actualDifference && drawResult)
-        //    {
-        //        if (predictedDifference == 0 && actualDifference == 0)
-        //        {
-        //            points += 50;
-        //            prediction.AccurateResult = true;
-        //        }
-        //        else if (prediction.HostTeamPredictedScore == match.HostTeamScore &&
-        //                 prediction.GuestTeamPredictedScore == match.GuestTeamScore)
-        //        {
-        //            points += 35;
-        //            prediction.AccurateResult = true;
-        //        }
-        //        else
-        //        {
-        //            int difference = Math.Abs(predictedDifference - actualDifference);
-        //            if (difference <= 2) points += 20;
-        //            else if (difference <= 4) points += 18;
-        //            else if (difference <= 6) points += 16;
-        //            else if (difference <= 8) points += 14;
-        //            else if (difference <= 10) points += 12;
-        //            else if (difference <= 12) points += 10;
-        //            else if (difference <= 14) points += 8;
-        //            else if (difference <= 16) points += 6;
-        //            else if (difference <= 18) points += 4;
-        //            else points += 2;
-        //        }
-
-        //    }
-        //        return points;
-        //}
 
         public async Task AddPredictionAsync(PredictionModel prediction)
         {
