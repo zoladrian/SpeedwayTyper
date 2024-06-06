@@ -148,7 +148,36 @@ namespace SpeedwayTyperApp.Server.Tests
         }
         /*dorób w tym miejscu kolejne metody sprawdzaj¹ce metode CalculatePointsAsync w momencie kiedy:
 4. Gracz pomyli³ siê o mniej ni¿ 20 pkt (np. 36:54) ale postawi³ na zwyciêzce (pkt wed³ug tabeli)
-5. Gracz pomyli³ siê o mniej ni¿ 20 pkt i postawi³ na przegranego (nie powinien dostaæ punktów)
+5. Gracz pomyli³ siê o mniej ni¿ 20 pkt i postawi³ na przegranego (nie powinien dostaæ punktów) */
+        
+        [Test]
+         public async Task dsda()
+        {
+            var match = new MatchModel
+            {
+                MatchId = 1,
+                HostTeamScore = 44,
+                GuestTeamScore = 46,
+                IsCompleted = true
+            };
+
+            var prediction = new PredictionModel
+            {
+                MatchId = 1,
+                HostTeamPredictedScore = 50,
+                GuestTeamPredictedScore = 40
+            };
+
+            _mockMatchRepository.Setup(repo => repo.GetMatchByIdAsync(prediction.MatchId))
+                .ReturnsAsync(match);
+
+            // Act
+            var points = await _predictionService.CalculatePointsAsync(prediction);
+
+            // Assert
+            Assert.AreEqual(0, points);
+        }
+        /*
 6. Gracz pomyli³ siê o wiêcej ni¿ 20pkt i postawi³ na wygran¹ dru¿yne (2pkt)
 7. Gracz postawi³ 45:45 ale pad³ wynik 0:0 (jak ostatnio podwójny walkower z grudzi¹dzem xD) (powinien dostaæ 20pkt)
 
