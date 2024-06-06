@@ -146,12 +146,39 @@ namespace SpeedwayTyperApp.Server.Tests
             // Assert
             Assert.AreEqual(0, points);
         }
-        /*dorób w tym miejscu kolejne metody sprawdzaj¹ce metode CalculatePointsAsync w momencie kiedy:
-4. Gracz pomyli³ siê o mniej ni¿ 20 pkt (np. 36:54) ale postawi³ na zwyciêzce (pkt wed³ug tabeli)
-5. Gracz pomyli³ siê o mniej ni¿ 20 pkt i postawi³ na przegranego (nie powinien dostaæ punktów) */
-        
+
         [Test]
-         public async Task dsda()
+        //4. Gracz pomyli³ siê o mniej ni¿ 20 pkt (np. 36:54) ale postawi³ na zwyciêzce (pkt wed³ug tabeli)
+        public async Task CalculatePointsAsync_ShouldReturn0Points_WhenPredictionIsPredictedTeamWin_AndPointsErrorIsLessThan20()
+        {
+            var match = new MatchModel
+            {
+                MatchId = 1,
+                HostTeamScore = 50,
+                GuestTeamScore = 40,
+                IsCompleted = true
+            };
+
+            var prediction = new PredictionModel
+            {
+                MatchId = 1,
+                HostTeamPredictedScore = 54,
+                GuestTeamPredictedScore = 36
+            };
+
+            _mockMatchRepository.Setup(repo => repo.GetMatchByIdAsync(prediction.MatchId))
+                .ReturnsAsync(match);
+
+            // Act
+            var points = await _predictionService.CalculatePointsAsync(prediction);
+
+            // Assert
+            Assert.AreEqual(14, points);
+        }
+
+        [Test]
+        //5. Gracz pomyli³ siê o mniej ni¿ 20 pkt i postawi³ na przegranego (nie powinien dostaæ punktów)
+        public async Task CalculatePointsAsync_ShouldReturn0Points_WhenPredictionIsOneTeamWinButSecondTeamWin_AndPointsErrorIsLessThan20()
         {
             var match = new MatchModel
             {
@@ -177,13 +204,64 @@ namespace SpeedwayTyperApp.Server.Tests
             // Assert
             Assert.AreEqual(0, points);
         }
-        /*
-6. Gracz pomyli³ siê o wiêcej ni¿ 20pkt i postawi³ na wygran¹ dru¿yne (2pkt)
-7. Gracz postawi³ 45:45 ale pad³ wynik 0:0 (jak ostatnio podwójny walkower z grudzi¹dzem xD) (powinien dostaæ 20pkt)
 
-z góry zak³adamy ¿e gracz bêdzie typowa³ wynik tak ¿e suma punktów obu dru¿yn bêdzie 90 i zwalidujemy to po stronie clienta. 
-wynik w meczu mo¿e paœæ inny np. 44:43, ale zak³adamy ¿e nie mo¿na obstawiaæ nietypowych wyników
-*/
+        [Test]
+        // 6. Gracz pomyli³ siê o wiêcej ni¿ 20pkt i postawi³ na wygran¹ dru¿yne (2pkt)
+        public async Task CalculatePointsAsync_ShouldReturn0Points_WhenPredictionIsPredictedTeamWin_AndPointsErrorIsMoreThan20()
+        {
+            var match = new MatchModel
+            {
+                MatchId = 1,
+                HostTeamScore = 46,
+                GuestTeamScore = 44,
+                IsCompleted = true
+            };
+
+            var prediction = new PredictionModel
+            {
+                MatchId = 1,
+                HostTeamPredictedScore = 64,
+                GuestTeamPredictedScore = 26
+            };
+
+            _mockMatchRepository.Setup(repo => repo.GetMatchByIdAsync(prediction.MatchId))
+                .ReturnsAsync(match);
+
+            // Act
+            var points = await _predictionService.CalculatePointsAsync(prediction);
+
+            // Assert
+            Assert.AreEqual(2, points);
+        }
+        [Test]
+        //7. Gracz postawi³ 45:45 ale pad³ wynik 0:0 (jak ostatnio podwójny walkower z grudzi¹dzem xD) (powinien dostaæ 20pkt)
+        public async Task CalculatePointsAsync_ShouldReturn20Points_WhenPredictionIsOK_ButMatchEndWalkover()
+        {
+            var match = new MatchModel
+            {
+                MatchId = 1,
+                HostTeamScore = 0,
+                GuestTeamScore = 0,
+                IsCompleted = true
+            };
+
+            var prediction = new PredictionModel
+            {
+                MatchId = 1,
+                HostTeamPredictedScore = 64,
+                GuestTeamPredictedScore = 26
+            };
+
+            _mockMatchRepository.Setup(repo => repo.GetMatchByIdAsync(prediction.MatchId))
+                .ReturnsAsync(match);
+
+            // Act
+            var points = await _predictionService.CalculatePointsAsync(prediction);
+
+            // Assert
+            Assert.AreEqual(20, points);
+        }
+
         [Test]
         //tutaj przyk³ad testu dla innej metody która updatuje usera, doda³em j¹ ¿eby by³o widaæ bardziej rozszerzone dzia³anie
         //mocków. Poza "udawaniem" obiektów implementuj¹cych dany interface, sprawdzaj¹ czy metody tych udawanych
