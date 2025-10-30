@@ -132,3 +132,66 @@ p {
     .btn:hover {
         background-color: #ff5722; /* Slightly darker orange on hover */
     }
+
+.text-muted {
+    color: #6c757d;
+}
+
+.text-success {
+    color: #2e7d32;
+}
+
+.mt-1 {
+    margin-top: 0.5rem;
+}
+
+.mt-2 {
+    margin-top: 0.75rem;
+}
+
+.mt-4 {
+    margin-top: 1.5rem;
+}
+
+.invitation-form {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+}
+
+.prediction-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+}
+
+.prediction-card {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    padding: 16px;
+}
+
+.score-inputs {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+}
+
+.score-field label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.score-separator {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #ff4c4c;
+    margin-bottom: 8px;
+}
+
+.auto90-hint {
+    font-size: 0.85rem;
+    margin-top: 8px;
+}

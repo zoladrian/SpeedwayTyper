@@ -28,7 +28,7 @@ namespace SpeedwayTyperApp.Server.Controllers
             var user = await _userManager.FindByNameAsync(model.Username);
             if (user != null && await _userManager.CheckPasswordAsync(user, model.Password))
             {
-                var token = _tokenService.GenerateToken(user);
+                var token = await _tokenService.GenerateTokenAsync(user);
                 return Ok(new { Token = token });
             }
 

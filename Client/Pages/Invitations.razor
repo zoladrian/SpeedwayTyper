@@ -1,0 +1,149 @@
+@page "/invitations"
+@attribute [Authorize(Roles = "Admin")]
+@inject HttpClient Http
+@inject NotificationService NotificationService
+
+<AuthorizeView Roles="Admin">
+    <Authorized>
+        <div class="container">
+            <div class="banner"></div>
+            <h3>Zarządzanie zaproszeniami</h3>
+
+            <EditForm Model="_invitationForm" OnValidSubmit="SendInvitationAsync">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <div class="form-group invitation-form">
+                    <RadzenTextBox @bind-Value="_invitationForm.Email" Placeholder="Adres e-mail" Style="width: 280px" />
+                    <RadzenButton ButtonType="ButtonType.Submit" Text="Wyślij zaproszenie" class="btn" IsDisabled="_isProcessing" />
+                </div>
+            </EditForm>
+
+            <RadzenDataGrid TItem="InvitationModel" Data="_invitations" @ref="_invitationsGrid" AllowPaging="true" PageSize="10" class="custom-grid mt-4">
+                <Columns>
+                    <RadzenGridColumn TItem="InvitationModel" Property="Email" Title="E-mail" />
+                    <RadzenGridColumn TItem="InvitationModel" Title="Status">
+                        <Template Context="invitation">@GetStatusLabel(invitation.Status)</Template>
+                    </RadzenGridColumn>
+                    <RadzenGridColumn TItem="InvitationModel" Title="Wysłano">
+                        <Template Context="invitation">@FormatDate(invitation.CreatedAt)</Template>
+                    </RadzenGridColumn>
+                    <RadzenGridColumn TItem="InvitationModel" Title="Odpowiedziano">
+                        <Template Context="invitation">@FormatDate(invitation.RespondedAt)</Template>
+                    </RadzenGridColumn>
+                    <RadzenGridColumn TItem="InvitationModel" Title="Akcje" Width="280px">
+                        <Template Context="invitation">
+                            <RadzenButton Text="Zaakceptuj" ButtonStyle="ButtonStyle.Success" Size="ButtonSize.Small" Disabled="invitation.Status == InvitationStatus.Accepted" Click="async () => await UpdateStatusAsync(invitation, InvitationStatus.Accepted)" class="mr-1" />
+                            <RadzenButton Text="Odrzuć" ButtonStyle="ButtonStyle.Secondary" Size="ButtonSize.Small" Disabled="invitation.Status == InvitationStatus.Declined" Click="async () => await UpdateStatusAsync(invitation, InvitationStatus.Declined)" class="mr-1" />
+                            <RadzenButton Text="Usuń" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Click="async () => await DeleteInvitationAsync(invitation)" />
+                        </Template>
+                    </RadzenGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <RedirectToLogin />
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private readonly InvitationInputModel _invitationForm = new();
+    private List<InvitationModel> _invitations = new();
+    private RadzenDataGrid<InvitationModel>? _invitationsGrid;
+    private bool _isProcessing;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadInvitationsAsync();
+    }
+
+    private async Task LoadInvitationsAsync()
+    {
+        _invitations = await Http.GetFromJsonAsync<List<InvitationModel>>("api/invitations") ?? new List<InvitationModel>();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SendInvitationAsync()
+    {
+        if (_isProcessing)
+        {
+            return;
+        }
+
+        _isProcessing = true;
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/invitations", new InvitationModel
+            {
+                Email = _invitationForm.Email
+            });
+
+            if (response.IsSuccessStatusCode)
+            {
+                NotificationService.Notify(NotificationSeverity.Success, "Zaproszenie wysłane", "Użytkownik otrzymał wiadomość z zaproszeniem.");
+                _invitationForm.Email = string.Empty;
+                await LoadInvitationsAsync();
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                NotificationService.Notify(NotificationSeverity.Error, "Nie udało się wysłać zaproszenia", error);
+            }
+        }
+        finally
+        {
+            _isProcessing = false;
+        }
+    }
+
+    private async Task UpdateStatusAsync(InvitationModel invitation, InvitationStatus status)
+    {
+        var response = await Http.PutAsJsonAsync($"api/invitations/{invitation.InvitationId}/status", new InvitationStatusUpdate(status));
+        if (response.IsSuccessStatusCode)
+        {
+            NotificationService.Notify(NotificationSeverity.Info, "Zmieniono status", $"Status zmieniono na {GetStatusLabel(status)}.");
+            await LoadInvitationsAsync();
+        }
+        else
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Nie udało się zmienić statusu", await response.Content.ReadAsStringAsync());
+        }
+    }
+
+    private async Task DeleteInvitationAsync(InvitationModel invitation)
+    {
+        var response = await Http.DeleteAsync($"api/invitations/{invitation.InvitationId}");
+        if (response.IsSuccessStatusCode)
+        {
+            NotificationService.Notify(NotificationSeverity.Success, "Zaproszenie usunięte", $"Usunięto zaproszenie dla {invitation.Email}.");
+            await LoadInvitationsAsync();
+        }
+        else
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Nie udało się usunąć", await response.Content.ReadAsStringAsync());
+        }
+    }
+
+    private static string GetStatusLabel(InvitationStatus status) => status switch
+    {
+        InvitationStatus.Pending => "Oczekujące",
+        InvitationStatus.Accepted => "Zaakceptowane",
+        InvitationStatus.Declined => "Odrzucone",
+        InvitationStatus.Expired => "Wygasło",
+        _ => status.ToString()
+    };
+
+    private static string FormatDate(DateTime? date)
+    {
+        return date.HasValue ? date.Value.ToLocalTime().ToString("g") : "-";
+    }
+
+    private record InvitationStatusUpdate(InvitationStatus Status);
+
+    private class InvitationInputModel
+    {
+        [Required(ErrorMessage = "Adres e-mail jest wymagany")]
+        [EmailAddress(ErrorMessage = "Nieprawidłowy adres e-mail")]
+        public string Email { get; set; } = string.Empty;
+    }
+}

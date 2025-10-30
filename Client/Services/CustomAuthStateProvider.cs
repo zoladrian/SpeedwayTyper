@@ -69,7 +69,35 @@ namespace SpeedwayTyperApp.Client.Services
 
             if (name != null) claims.Add(new Claim(ClaimTypes.Name, name.ToString()));
             if (nameId != null) claims.Add(new Claim(ClaimTypes.NameIdentifier, nameId.ToString()));
-            if (roles != null) claims.Add(new Claim(ClaimTypes.Role, roles.ToString()));
+            if (roles != null)
+            {
+                if (roles is JsonElement rolesElement)
+                {
+                    if (rolesElement.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var role in rolesElement.EnumerateArray())
+                        {
+                            var roleValue = role.GetString();
+                            if (!string.IsNullOrWhiteSpace(roleValue))
+                            {
+                                claims.Add(new Claim(ClaimTypes.Role, roleValue));
+                            }
+                        }
+                    }
+                    else
+                    {
+                        var singleRole = rolesElement.GetString();
+                        if (!string.IsNullOrWhiteSpace(singleRole))
+                        {
+                            claims.Add(new Claim(ClaimTypes.Role, singleRole));
+                        }
+                    }
+                }
+                else
+                {
+                    claims.Add(new Claim(ClaimTypes.Role, roles.ToString()));
+                }
+            }
 
             return claims;
         }

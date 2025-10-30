@@ -15,7 +15,13 @@ namespace SpeedwayTyperApp.Server.Repositories
 
         public async Task<IEnumerable<PredictionModel>> GetPredictionsByUserAsync(string userId)
         {
-            return await _context.Predictions.Where(p => p.UserId.Equals(userId)).ToListAsync();
+            return await _context.Predictions
+                                  .Include(p => p.Match)
+                                      .ThenInclude(m => m.HostTeam)
+                                  .Include(p => p.Match)
+                                      .ThenInclude(m => m.GuestTeam)
+                                  .Where(p => p.UserId.Equals(userId))
+                                  .ToListAsync();
         }
 
         public async Task AddPredictionAsync(PredictionModel prediction)
