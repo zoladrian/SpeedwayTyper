@@ -1,4 +1,5 @@
-﻿using SpeedwayTyperApp.Shared.Models;
+using System.Collections.Generic;
+using SpeedwayTyperApp.Shared.Models;
 
 namespace SpeedwayTyperApp.Server.Services
 {

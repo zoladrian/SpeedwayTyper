@@ -1,4 +1,4 @@
-using Moq;
+
 using SpeedwayTyperApp.Server.Repositories;
 using SpeedwayTyperApp.Server.Services;
 using SpeedwayTyperApp.Shared.Models;
@@ -7,10 +7,10 @@ namespace SpeedwayTyperApp.Server.Tests
 {
     public class PredictionServiceTests
     {
-        private Mock<IMatchRepository> _mockMatchRepository;
-        private Mock<IUserRepository> _mockUserRepository;
-        private Mock<IPredictionRepository> _mockPredictionRepository;
-        private PredictionService _predictionService;
+        private Mock<IMatchRepository> _mockMatchRepository = null!;
+        private Mock<IUserRepository> _mockUserRepository = null!;
+        private Mock<IPredictionRepository> _mockPredictionRepository = null!;
+        private PredictionService _predictionService = null!;
 
         [SetUp]
         public void Setup()
@@ -22,10 +22,8 @@ namespace SpeedwayTyperApp.Server.Tests
         }
 
         [Test]
-        //Nazwa testu to nazwa testowanej metody, co testujemy i wynik
-        public async Task CalculatePointsAsync_ShouldReturn50PointsAndSetAccurateResult_WhenPredictionIsExactDraw()
+        public async Task CalculatePointsAsync_ShouldReturn50PointsAndSetAccurateResult_WhenPredictionIsExactTypicalDraw()
         {
-            // Arrange
             var match = new MatchModel
             {
                 MatchId = 1,
@@ -41,39 +39,207 @@ namespace SpeedwayTyperApp.Server.Tests
                 GuestTeamPredictedScore = 45
             };
 
-            //za pomoc¹ .Setup ustawiamy ¿eby GetMatchByIdAsync z danym argumentem zwraca³o
-            //ten konkretny obiekt match
             _mockMatchRepository.Setup(repo => repo.GetMatchByIdAsync(prediction.MatchId))
                 .ReturnsAsync(match);
 
-            // Act
             var points = await _predictionService.CalculatePointsAsync(prediction);
 
-            // Assert
             Assert.AreEqual(50, points);
             Assert.IsTrue(prediction.AccurateResult);
         }
 
-        /*dorób w tym miejscu kolejne metody sprawdzaj¹ce metode CalculatePointsAsync w momencie kiedy:
-        1. Gracz wytypowa³ dok³adny wynik, ale nie remis i jest to wynik "typowy" w ¿u¿lu (np. 43:47, czyli suma wyniku to 90) (35pkt i trafiony wynik na true).
-        2. Gracz wytypowa³ remis a wygra³a któraœ z dru¿yn (nie powinien dostaæ punktów)
-        3. Gracz wytypowa³ wygran¹ jednej z dru¿yn ale pad³ remis (nie powinien dostaæ punktów)
-        4. Gracz pomyli³ siê o mniej ni¿ 20 pkt (np. 36:54) ale postawi³ na zwyciêzce (pkt wed³ug tabeli)
-        5. Gracz pomyli³ siê o mniej ni¿ 20 pkt i postawi³ na przegranego (nie powinien dostaæ punktów)
-        6. Gracz pomyli³ siê o wiêcej ni¿ 20pkt i postawi³ na wygran¹ dru¿yne (2pkt)
-        7. Gracz postawi³ 45:45 ale pad³ wynik 0:0 (jak ostatnio podwójny walkower z grudzi¹dzem xD) (powinien dostaæ 20pkt)
+        [Test]
+        public async Task CalculatePointsAsync_ShouldReturn35PointsAndSetAccurateResult_WhenPredictionIsExactTypicalWin()
+        {
+            var match = new MatchModel
+            {
+                MatchId = 2,
+                HostTeamScore = 47,
+                GuestTeamScore = 43,
+                IsCompleted = true
+            };
 
-        z góry zak³adamy ¿e gracz bêdzie typowa³ wynik tak ¿e suma punktów obu dru¿yn bêdzie 90 i zwalidujemy to po stronie clienta. 
-        wynik w meczu mo¿e paœæ inny np. 44:43, ale zak³adamy ¿e nie mo¿na obstawiaæ nietypowych wyników
-         */
+            var prediction = new PredictionModel
+            {
+                MatchId = 2,
+                HostTeamPredictedScore = 47,
+                GuestTeamPredictedScore = 43
+            };
+
+            _mockMatchRepository.Setup(repo => repo.GetMatchByIdAsync(prediction.MatchId))
+                .ReturnsAsync(match);
+
+            var points = await _predictionService.CalculatePointsAsync(prediction);
+
+            Assert.AreEqual(35, points);
+            Assert.IsTrue(prediction.AccurateResult);
+        }
 
         [Test]
-        //tutaj przyk³ad testu dla innej metody która updatuje usera, doda³em j¹ ¿eby by³o widaæ bardziej rozszerzone dzia³anie
-        //mocków. Poza "udawaniem" obiektów implementuj¹cych dany interface, sprawdzaj¹ czy metody tych udawanych
-        //obiektów s¹ wywo³ywane z konkretnymi danymi.
+        public async Task CalculatePointsAsync_ShouldReturn0Points_WhenPredictedDrawButActualHasWinner()
+        {
+            var match = new MatchModel
+            {
+                MatchId = 3,
+                HostTeamScore = 50,
+                GuestTeamScore = 40,
+                IsCompleted = true
+            };
+
+            var prediction = new PredictionModel
+            {
+                MatchId = 3,
+                HostTeamPredictedScore = 45,
+                GuestTeamPredictedScore = 45
+            };
+
+            _mockMatchRepository.Setup(repo => repo.GetMatchByIdAsync(prediction.MatchId))
+                .ReturnsAsync(match);
+
+            var points = await _predictionService.CalculatePointsAsync(prediction);
+
+            Assert.AreEqual(0, points);
+            Assert.IsFalse(prediction.AccurateResult);
+        }
+
+        [Test]
+        public async Task CalculatePointsAsync_ShouldReturn0Points_WhenPredictedWinnerButActualDraw()
+        {
+            var match = new MatchModel
+            {
+                MatchId = 4,
+                HostTeamScore = 45,
+                GuestTeamScore = 45,
+                IsCompleted = true
+            };
+
+            var prediction = new PredictionModel
+            {
+                MatchId = 4,
+                HostTeamPredictedScore = 48,
+                GuestTeamPredictedScore = 42
+            };
+
+            _mockMatchRepository.Setup(repo => repo.GetMatchByIdAsync(prediction.MatchId))
+                .ReturnsAsync(match);
+
+            var points = await _predictionService.CalculatePointsAsync(prediction);
+
+            Assert.AreEqual(0, points);
+            Assert.IsFalse(prediction.AccurateResult);
+        }
+
+        [Test]
+        public async Task CalculatePointsAsync_ShouldReturn18Points_WhenPredictionCloseAndWinnerCorrect()
+        {
+            var match = new MatchModel
+            {
+                MatchId = 5,
+                HostTeamScore = 50,
+                GuestTeamScore = 40,
+                IsCompleted = true
+            };
+
+            var prediction = new PredictionModel
+            {
+                MatchId = 5,
+                HostTeamPredictedScore = 48,
+                GuestTeamPredictedScore = 42
+            };
+
+            _mockMatchRepository.Setup(repo => repo.GetMatchByIdAsync(prediction.MatchId))
+                .ReturnsAsync(match);
+
+            var points = await _predictionService.CalculatePointsAsync(prediction);
+
+            Assert.AreEqual(18, points);
+            Assert.IsFalse(prediction.AccurateResult);
+        }
+
+        [Test]
+        public async Task CalculatePointsAsync_ShouldReturn0Points_WhenPredictionCloseButWinnerIncorrect()
+        {
+            var match = new MatchModel
+            {
+                MatchId = 6,
+                HostTeamScore = 50,
+                GuestTeamScore = 40,
+                IsCompleted = true
+            };
+
+            var prediction = new PredictionModel
+            {
+                MatchId = 6,
+                HostTeamPredictedScore = 42,
+                GuestTeamPredictedScore = 48
+            };
+
+            _mockMatchRepository.Setup(repo => repo.GetMatchByIdAsync(prediction.MatchId))
+                .ReturnsAsync(match);
+
+            var points = await _predictionService.CalculatePointsAsync(prediction);
+
+            Assert.AreEqual(0, points);
+            Assert.IsFalse(prediction.AccurateResult);
+        }
+
+        [Test]
+        public async Task CalculatePointsAsync_ShouldReturn2Points_WhenPredictionFarOffButWinnerCorrect()
+        {
+            var match = new MatchModel
+            {
+                MatchId = 7,
+                HostTeamScore = 60,
+                GuestTeamScore = 30,
+                IsCompleted = true
+            };
+
+            var prediction = new PredictionModel
+            {
+                MatchId = 7,
+                HostTeamPredictedScore = 48,
+                GuestTeamPredictedScore = 42
+            };
+
+            _mockMatchRepository.Setup(repo => repo.GetMatchByIdAsync(prediction.MatchId))
+                .ReturnsAsync(match);
+
+            var points = await _predictionService.CalculatePointsAsync(prediction);
+
+            Assert.AreEqual(2, points);
+            Assert.IsFalse(prediction.AccurateResult);
+        }
+
+        [Test]
+        public async Task CalculatePointsAsync_ShouldReturn20Points_WhenPredictionTypicalDrawButActualAtypicalDraw()
+        {
+            var match = new MatchModel
+            {
+                MatchId = 8,
+                HostTeamScore = 0,
+                GuestTeamScore = 0,
+                IsCompleted = true
+            };
+
+            var prediction = new PredictionModel
+            {
+                MatchId = 8,
+                HostTeamPredictedScore = 45,
+                GuestTeamPredictedScore = 45
+            };
+
+            _mockMatchRepository.Setup(repo => repo.GetMatchByIdAsync(prediction.MatchId))
+                .ReturnsAsync(match);
+
+            var points = await _predictionService.CalculatePointsAsync(prediction);
+
+            Assert.AreEqual(20, points);
+            Assert.IsFalse(prediction.AccurateResult);
+        }
+
+        [Test]
         public async Task AddPredictionAsync_ShouldAddPredictionAndUpdateUserPoints()
         {
-            // Arrange
             var match = new MatchModel
             {
                 MatchId = 1,
@@ -106,14 +272,9 @@ namespace SpeedwayTyperApp.Server.Tests
             _mockPredictionRepository.Setup(repo => repo.GetPredictionsByUserAsync(prediction.UserId))
                 .ReturnsAsync(new List<PredictionModel> { prediction });
 
-            // Act
             await _predictionService.AddPredictionAsync(prediction);
 
-            // Assert
-            //.Verify na mocku oznacza ¿e sprawdzamy czy to zadzia³a³o ta metoda z tym argumentem zosta³a jednokrotnie wywo³ana
             _mockPredictionRepository.Verify(repo => repo.AddPredictionAsync(prediction), Times.Once);
-            //tutaj bardziej rozszerzone u¿ycie, sprawdzamy czy przekazany by³ obiekt 
-            //typu UserModel z konkretn¹ wartoœci¹ dla TotalPoints i AccurateMatchResult
             _mockUserRepository.Verify(repo => repo.UpdateUserAsync(It.Is<UserModel>(u => u.TotalPoints == 50 && u.AccurateMatchResults == 1)), Times.Once);
         }
     }
