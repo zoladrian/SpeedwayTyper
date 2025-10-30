@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 using SpeedwayTyperApp.Server.Repositories;
+using SpeedwayTyperApp.Server.Services;
 using SpeedwayTyperApp.Shared.Models;
 
 namespace SpeedwayTyperApp.Server.Controllers
@@ -10,10 +12,12 @@ namespace SpeedwayTyperApp.Server.Controllers
     public class MatchesController : ControllerBase
     {
         private readonly IMatchRepository _matchRepository;
+        private readonly IMatchService _matchService;
 
-        public MatchesController(IMatchRepository matchRepository)
+        public MatchesController(IMatchRepository matchRepository, IMatchService matchService)
         {
             _matchRepository = matchRepository;
+            _matchService = matchService;
         }
 
         [HttpGet]
@@ -53,7 +57,14 @@ namespace SpeedwayTyperApp.Server.Controllers
                 return BadRequest();
             }
 
-            await _matchRepository.UpdateMatchAsync(match);
+            try
+            {
+                await _matchService.UpdateMatchAsync(match);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
             return NoContent();
         }
 

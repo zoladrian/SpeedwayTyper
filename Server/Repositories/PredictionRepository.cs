@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SpeedwayTyperApp.Server.DbContexts;
 using SpeedwayTyperApp.Shared.Models;
+using System.Linq;
 
 namespace SpeedwayTyperApp.Server.Repositories
 {
@@ -22,6 +23,26 @@ namespace SpeedwayTyperApp.Server.Repositories
                                       .ThenInclude(m => m.GuestTeam)
                                   .Where(p => p.UserId.Equals(userId))
                                   .ToListAsync();
+        }
+
+        public async Task<PredictionModel?> GetPredictionByIdAsync(int predictionId)
+        {
+            return await _context.Predictions
+                                 .Include(p => p.Match)
+                                 .FirstOrDefaultAsync(p => p.PredictionId == predictionId);
+        }
+
+        public async Task<PredictionModel?> GetPredictionByUserAndMatchAsync(string userId, int matchId)
+        {
+            return await _context.Predictions
+                                 .FirstOrDefaultAsync(p => p.UserId == userId && p.MatchId == matchId);
+        }
+
+        public async Task<IEnumerable<PredictionModel>> GetPredictionsForMatchAsync(int matchId)
+        {
+            return await _context.Predictions
+                                 .Where(p => p.MatchId == matchId)
+                                 .ToListAsync();
         }
 
         public async Task AddPredictionAsync(PredictionModel prediction)

@@ -78,6 +78,7 @@ Algorytm naliczania punktów znajduje się w `Server/Services/PredictionService.
 - W pozostałych przypadkach punktacja zależy od różnicy pomiędzy przewidywaną a faktyczną różnicą bramek. Przedziały różnicy 0–2, 3–4, …, 17–18 dają odpowiednio 20, 18, 16, 14, 12, 10, 8, 6 oraz 4 punkty. Większe odchylenie skutkuje jedynie 2 punktami.
 - Jeśli użytkownik poprawnie oszacował różnicę, ale pomylił się co do zwycięzcy (lub wytypował zwycięzcę, a padł remis), zdobywa 0 punktów.
 - Każda aktualizacja typowania automatycznie przelicza sumę punktów i liczbę perfekcyjnych trafień dla użytkownika.
+- Po oznaczeniu meczu jako zakończonego wynik jest transakcyjnie zapisywany wraz z ponownym przeliczeniem punktów wszystkich powiązanych typów oraz aktualizacją statystyk użytkowników.
 
 ## Przepływ zaproszeń
 
