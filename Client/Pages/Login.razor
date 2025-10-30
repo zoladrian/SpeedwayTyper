@@ -1,4 +1,4 @@
-﻿@page "/login"
+@page "/login"
 @using SpeedwayTyperApp.Shared.Models
 @inject HttpClient Http
 @inject NavigationManager Navigation
@@ -8,6 +8,10 @@
 <div class="login-box">
     <div class="login-container">
         <h3>Zaloguj</h3>
+        @if (!string.IsNullOrEmpty(_errorMessage))
+        {
+            <div class="error-message">@_errorMessage</div>
+        }
         <EditForm Model="loginModel" OnValidSubmit="HandleLogin">
             <DataAnnotationsValidator />
             <ValidationSummary />
@@ -19,11 +23,15 @@
             </div>
             <RadzenButton ButtonType="ButtonType.Submit" Text="Zaloguj" class="btn" />
         </EditForm>
+        <div class="register-link">
+            <a href="/register">Nie masz konta? Zarejestruj się z kodem zaproszenia.</a>
+        </div>
     </div>
 </div>
 
 @code {
     private LoginModel loginModel = new LoginModel();
+    private string _errorMessage = string.Empty;
 
     private async Task HandleLogin()
     {
@@ -40,7 +48,8 @@
         }
         else
         {
-            // Handle error (show message to user)
+            var message = await response.Content.ReadAsStringAsync();
+            _errorMessage = string.IsNullOrWhiteSpace(message) ? "Nieprawidłowe dane logowania." : message;
         }
     }
 
@@ -49,3 +58,24 @@
         public string Token { get; set; }
     }
 }
+
+<style>
+    .error-message {
+        color: #dc3545;
+        margin-bottom: 10px;
+    }
+
+    .register-link {
+        margin-top: 15px;
+        text-align: center;
+    }
+
+    .register-link a {
+        color: #007bff;
+        text-decoration: none;
+    }
+
+    .register-link a:hover {
+        text-decoration: underline;
+    }
+</style>

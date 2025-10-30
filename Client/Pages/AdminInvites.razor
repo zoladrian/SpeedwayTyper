@@ -1,0 +1,86 @@
+@page "/admin/invites"
+@attribute [Authorize(Roles = "Admin")]
+@inject HttpClient Http
+
+<h3>Zarządzanie zaproszeniami</h3>
+
+@if (!string.IsNullOrEmpty(_errorMessage))
+{
+    <div class="error-message">@_errorMessage</div>
+}
+
+<EditForm Model="_createModel" OnValidSubmit="CreateInvite">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div class="form-row">
+        <RadzenTextBox @bind-Value="_createModel.Code" Placeholder="Kod" class="form-control" />
+        <RadzenNumeric @bind-Value="_createModel.MaxUses" TValue="int" Min="1" class="form-control" />
+        <RadzenDatePicker @bind-Value="_createModel.ExpirationDate" TValue="DateTime?" Placeholder="Data ważności" Style="width: 200px;" />
+        <RadzenButton Text="Utwórz" ButtonType="ButtonType.Submit" Style="margin-left:10px" />
+    </div>
+</EditForm>
+
+<RadzenGrid Data="_invites" TItem="InviteCodeModel" class="custom-grid" Style="margin-top:20px">
+    <Columns>
+        <RadzenGridColumn TItem="InviteCodeModel" Property="Code" Title="Kod" />
+        <RadzenGridColumn TItem="InviteCodeModel" Property="Uses" Title="Wykorzystano" />
+        <RadzenGridColumn TItem="InviteCodeModel" Property="MaxUses" Title="Limit" />
+        <RadzenGridColumn TItem="InviteCodeModel" Property="ExpirationDate" Title="Ważne do" FormatString="{0:yyyy-MM-dd}" />
+        <RadzenGridColumn TItem="InviteCodeModel" Property="CreatedByUserName" Title="Utworzył" />
+    </Columns>
+</RadzenGrid>
+
+@code {
+    private readonly InviteCreateModel _createModel = new() { MaxUses = 1 };
+    private List<InviteCodeModel> _invites = new();
+    private string _errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadInvites();
+    }
+
+    private async Task LoadInvites()
+    {
+        _errorMessage = string.Empty;
+        try
+        {
+            var data = await Http.GetFromJsonAsync<List<InviteCodeModel>>("api/Admin/invites");
+            _invites = data ?? new List<InviteCodeModel>();
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Nie udało się pobrać zaproszeń: {ex.Message}";
+        }
+    }
+
+    private async Task CreateInvite()
+    {
+        _errorMessage = string.Empty;
+        var response = await Http.PostAsJsonAsync("api/Admin/invites", _createModel);
+        if (response.IsSuccessStatusCode)
+        {
+            _createModel.Code = string.Empty;
+            await LoadInvites();
+        }
+        else
+        {
+            var error = await response.Content.ReadAsStringAsync();
+            _errorMessage = string.IsNullOrWhiteSpace(error) ? "Nie udało się utworzyć zaproszenia." : error;
+        }
+    }
+}
+
+<style>
+    .form-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .error-message {
+        color: #dc3545;
+        margin-bottom: 10px;
+    }
+</style>

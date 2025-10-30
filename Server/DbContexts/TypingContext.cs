@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using SpeedwayTyperApp.Shared.Models;
 
@@ -29,6 +29,16 @@ namespace SpeedwayTyperApp.Server.DbContexts
                 .HasOne(m => m.GuestTeam)
                 .WithMany()
                 .HasForeignKey(m => m.GuestTeamId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<InviteCodeModel>()
+                .HasIndex(i => i.Code)
+                .IsUnique();
+
+            modelBuilder.Entity<InviteCodeModel>()
+                .HasOne<UserModel>()
+                .WithMany()
+                .HasForeignKey(i => i.CreatedById)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }
