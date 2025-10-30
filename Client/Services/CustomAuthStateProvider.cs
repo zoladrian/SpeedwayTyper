@@ -1,11 +1,13 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.JSInterop;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text.Json;
+using System.Threading.Tasks;
 using JwtRegisteredClaimNames = System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames;
 
 namespace SpeedwayTyperApp.Client.Services
