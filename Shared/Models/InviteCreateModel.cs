@@ -7,7 +7,7 @@ namespace SpeedwayTyperApp.Shared.Models
     {
         [Required]
         [MaxLength(64)]
-        public string Code { get; set; }
+        public string Code { get; set; } = string.Empty;
 
         [Range(1, int.MaxValue)]
         public int MaxUses { get; set; }

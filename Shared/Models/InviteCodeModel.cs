@@ -10,7 +10,7 @@ namespace SpeedwayTyperApp.Shared.Models
 
         [Required]
         [MaxLength(64)]
-        public string Code { get; set; }
+        public string Code { get; set; } = string.Empty;
 
         [Range(1, int.MaxValue)]
         public int MaxUses { get; set; }
@@ -20,7 +20,7 @@ namespace SpeedwayTyperApp.Shared.Models
         public DateTime? ExpirationDate { get; set; }
 
         [Required]
-        public string CreatedById { get; set; }
+        public string CreatedById { get; set; } = string.Empty;
 
         [NotMapped]
         public string? CreatedByUserName { get; set; }

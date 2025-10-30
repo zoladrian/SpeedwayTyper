@@ -85,6 +85,7 @@ namespace SpeedwayTyperApp.Client.Tests
 
         private static string Base64UrlEncode(string value)
         {
+            ArgumentNullException.ThrowIfNull(value);
             var bytes = Encoding.UTF8.GetBytes(value);
             return Convert.ToBase64String(bytes)
                 .TrimEnd('=')

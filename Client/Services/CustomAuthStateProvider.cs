@@ -76,19 +76,17 @@ namespace SpeedwayTyperApp.Client.Services
             var jsonBytes = ParseBase64WithoutPadding(payload);
             var keyValuePairs = JsonSerializer.Deserialize<Dictionary<string, object>>(jsonBytes);
 
-            if (keyValuePairs == null)
+            if (keyValuePairs is null)
             {
                 return claims;
             }
 
-            var name = GetSingleClaimValue(keyValuePairs, ClaimTypes.Name, JwtRegisteredClaimNames.UniqueName);
-            if (!string.IsNullOrWhiteSpace(name))
+            if (GetSingleClaimValue(keyValuePairs, ClaimTypes.Name, JwtRegisteredClaimNames.UniqueName) is { Length: > 0 } name)
             {
                 claims.Add(new Claim(ClaimTypes.Name, name));
             }
 
-            var nameId = GetSingleClaimValue(keyValuePairs, ClaimTypes.NameIdentifier, JwtRegisteredClaimNames.Sub);
-            if (!string.IsNullOrWhiteSpace(nameId))
+            if (GetSingleClaimValue(keyValuePairs, ClaimTypes.NameIdentifier, JwtRegisteredClaimNames.Sub) is { Length: > 0 } nameId)
             {
                 claims.Add(new Claim(ClaimTypes.NameIdentifier, nameId));
             }
@@ -148,7 +146,7 @@ namespace SpeedwayTyperApp.Client.Services
                         var role = ConvertJsonElementToString(jsonRole);
                         if (!string.IsNullOrWhiteSpace(role))
                         {
-                            yield return role;
+                            yield return role!;
                         }
                     }
                     yield break;
@@ -157,7 +155,7 @@ namespace SpeedwayTyperApp.Client.Services
                         var role = ConvertJsonElementToString(element);
                         if (!string.IsNullOrWhiteSpace(role))
                         {
-                            yield return role;
+                            yield return role!;
                         }
                         yield break;
                     }
@@ -165,7 +163,7 @@ namespace SpeedwayTyperApp.Client.Services
                     var roleValue = roles.ToString();
                     if (!string.IsNullOrWhiteSpace(roleValue))
                     {
-                        yield return roleValue;
+                        yield return roleValue!;
                     }
                     yield break;
             }

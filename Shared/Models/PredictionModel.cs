@@ -3,10 +3,10 @@
     public class PredictionModel
     {
         public int PredictionId { get; set; }
-        public string UserId { get; set; }
-        public UserModel User { get; set; }
+        public string UserId { get; set; } = string.Empty;
+        public UserModel User { get; set; } = null!;
         public int MatchId { get; set; }
-        public MatchModel Match { get; set; }
+        public MatchModel Match { get; set; } = null!;
         public int HostTeamPredictedScore { get; set; }
         public int GuestTeamPredictedScore { get; set; }
         public DateTime CreatedAt { get; set; }

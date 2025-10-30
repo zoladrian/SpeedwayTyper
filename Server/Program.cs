@@ -2,9 +2,11 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System;
 using SpeedwayTyperApp.Server.DbContexts;
 using SpeedwayTyperApp.Server.Repositories;
 using SpeedwayTyperApp.Server.Services;
+using SpeedwayTyperApp.Shared.Models;
 using System.Security.Claims;
 using System.Text;
 
@@ -18,7 +20,9 @@ builder.Services.AddIdentity<UserModel, IdentityRole>()
     .AddEntityFrameworkStores<TypingContext>()
     .AddDefaultTokenProviders();
 
-var key = Encoding.ASCII.GetBytes(builder.Configuration["Jwt:Key"]);
+var jwtKey = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT key is not configured.");
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? throw new InvalidOperationException("JWT issuer is not configured.");
+var key = Encoding.ASCII.GetBytes(jwtKey);
 
 builder.Services.AddAuthentication(options =>
 {
@@ -35,8 +39,8 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        ValidAudience = builder.Configuration["Jwt:Issuer"],
+        ValidIssuer = jwtIssuer,
+        ValidAudience = jwtIssuer,
         IssuerSigningKey = new SymmetricSecurityKey(key),
         NameClaimType = ClaimTypes.NameIdentifier,
         RoleClaimType = ClaimTypes.Role,
@@ -140,12 +144,15 @@ public static class SeedData
         var adminRole = new IdentityRole("Admin");
         var playerRole = new IdentityRole("Player");
 
-        if (!await roleManager.RoleExistsAsync(adminRole.Name))
+        var adminRoleName = adminRole.Name ?? throw new InvalidOperationException("Admin role name is missing.");
+        var playerRoleName = playerRole.Name ?? throw new InvalidOperationException("Player role name is missing.");
+
+        if (!await roleManager.RoleExistsAsync(adminRoleName))
         {
             await roleManager.CreateAsync(adminRole);
         }
 
-        if (!await roleManager.RoleExistsAsync(playerRole.Name))
+        if (!await roleManager.RoleExistsAsync(playerRoleName))
         {
             await roleManager.CreateAsync(playerRole);
         }
@@ -165,7 +172,7 @@ public static class SeedData
 
             if (result.Succeeded)
             {
-                await userManager.AddToRoleAsync(adminUser, adminRole.Name);
+                await userManager.AddToRoleAsync(adminUser, adminRoleName);
             }
         }
         else if (adminUser.IsPendingApproval)
