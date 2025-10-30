@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text.Json;
+using JwtRegisteredClaimNames = System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames;
 
 namespace SpeedwayTyperApp.Client.Services
 {
@@ -78,49 +79,113 @@ namespace SpeedwayTyperApp.Client.Services
                 return claims;
             }
 
-            if (keyValuePairs.TryGetValue(ClaimTypes.Name, out var name) && name != null)
+            var name = GetSingleClaimValue(keyValuePairs, ClaimTypes.Name, JwtRegisteredClaimNames.UniqueName);
+            if (!string.IsNullOrWhiteSpace(name))
             {
-                claims.Add(new Claim(ClaimTypes.Name, name.ToString()!));
+                claims.Add(new Claim(ClaimTypes.Name, name));
             }
 
-            if (keyValuePairs.TryGetValue(ClaimTypes.NameIdentifier, out var nameId) && nameId != null)
+            var nameId = GetSingleClaimValue(keyValuePairs, ClaimTypes.NameIdentifier, JwtRegisteredClaimNames.Sub);
+            if (!string.IsNullOrWhiteSpace(nameId))
             {
-                claims.Add(new Claim(ClaimTypes.NameIdentifier, nameId.ToString()!));
+                claims.Add(new Claim(ClaimTypes.NameIdentifier, nameId));
             }
 
-            if (name != null) claims.Add(new Claim(ClaimTypes.Name, name.ToString()));
-            if (nameId != null) claims.Add(new Claim(ClaimTypes.NameIdentifier, nameId.ToString()));
-            if (roles != null)
+            var roles = GetClaimValue(keyValuePairs, ClaimTypes.Role, "role", "roles", JwtRegisteredClaimNames.Typ);
+
+            foreach (var role in GetRoleValues(roles))
             {
-                if (roles is JsonElement rolesElement)
-                {
-                    if (rolesElement.ValueKind == JsonValueKind.Array)
-                    {
-                        foreach (var role in rolesElement.EnumerateArray())
-                        {
-                            var roleValue = role.GetString();
-                            if (!string.IsNullOrWhiteSpace(roleValue))
-                            {
-                                claims.Add(new Claim(ClaimTypes.Role, roleValue));
-                            }
-                        }
-                    }
-                    else
-                    {
-                        var singleRole = rolesElement.GetString();
-                        if (!string.IsNullOrWhiteSpace(singleRole))
-                        {
-                            claims.Add(new Claim(ClaimTypes.Role, singleRole));
-                        }
-                    }
-                }
-                else
-                {
-                    claims.Add(new Claim(ClaimTypes.Role, roles.ToString()));
-                }
+                claims.Add(new Claim(ClaimTypes.Role, role));
             }
 
             return claims;
+        }
+
+        private static object? GetClaimValue(Dictionary<string, object> keyValuePairs, params string[] claimKeys)
+        {
+            foreach (var key in claimKeys)
+            {
+                if (keyValuePairs.TryGetValue(key, out var value) && value != null)
+                {
+                    return value;
+                }
+            }
+
+            return null;
+        }
+
+        private static string? GetSingleClaimValue(Dictionary<string, object> keyValuePairs, params string[] claimKeys)
+        {
+            foreach (var key in claimKeys)
+            {
+                if (keyValuePairs.TryGetValue(key, out var value) && value != null)
+                {
+                    var stringValue = ConvertJsonElementToString(value);
+                    if (!string.IsNullOrWhiteSpace(stringValue))
+                    {
+                        return stringValue;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private static IEnumerable<string> GetRoleValues(object? roles)
+        {
+            if (roles == null)
+            {
+                yield break;
+            }
+
+            switch (roles)
+            {
+                case JsonElement element when element.ValueKind == JsonValueKind.Array:
+                    foreach (var jsonRole in element.EnumerateArray())
+                    {
+                        var role = ConvertJsonElementToString(jsonRole);
+                        if (!string.IsNullOrWhiteSpace(role))
+                        {
+                            yield return role;
+                        }
+                    }
+                    yield break;
+                case JsonElement element:
+                    {
+                        var role = ConvertJsonElementToString(element);
+                        if (!string.IsNullOrWhiteSpace(role))
+                        {
+                            yield return role;
+                        }
+                        yield break;
+                    }
+                default:
+                    var roleValue = roles.ToString();
+                    if (!string.IsNullOrWhiteSpace(roleValue))
+                    {
+                        yield return roleValue;
+                    }
+                    yield break;
+            }
+        }
+
+        private static string? ConvertJsonElementToString(object value)
+        {
+            if (value is JsonElement element)
+            {
+                return element.ValueKind switch
+                {
+                    JsonValueKind.String => element.GetString(),
+                    JsonValueKind.Number => element.ToString(),
+                    JsonValueKind.True => bool.TrueString,
+                    JsonValueKind.False => bool.FalseString,
+                    JsonValueKind.Null => null,
+                    JsonValueKind.Undefined => null,
+                    _ => element.ToString(),
+                };
+            }
+
+            return value?.ToString();
         }
 
         private byte[] ParseBase64WithoutPadding(string base64)

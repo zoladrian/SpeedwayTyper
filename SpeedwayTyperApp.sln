@@ -11,6 +11,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SpeedwayTyperApp.Shared", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpeedwayTyperApp.Server.Tests", "SpeedwayTyperApp.Server.Tests\SpeedwayTyperApp.Server.Tests.csproj", "{AD189C1A-07CE-4F4D-AA8A-93C0FEFD9D68}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpeedwayTyperApp.Client.Tests", "SpeedwayTyperApp.Client.Tests\SpeedwayTyperApp.Client.Tests.csproj", "{71037810-6ECC-438B-9BE4-5B9911A1B31D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,10 +32,14 @@ Global
 		{F567648E-4B96-4817-96A5-693C73C1584F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F567648E-4B96-4817-96A5-693C73C1584F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{AD189C1A-07CE-4F4D-AA8A-93C0FEFD9D68}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{AD189C1A-07CE-4F4D-AA8A-93C0FEFD9D68}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{AD189C1A-07CE-4F4D-AA8A-93C0FEFD9D68}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{AD189C1A-07CE-4F4D-AA8A-93C0FEFD9D68}.Release|Any CPU.Build.0 = Release|Any CPU
-	EndGlobalSection
+                {AD189C1A-07CE-4F4D-AA8A-93C0FEFD9D68}.Debug|Any CPU.Build.0 = Debug|Any CPU
+                {AD189C1A-07CE-4F4D-AA8A-93C0FEFD9D68}.Release|Any CPU.ActiveCfg = Release|Any CPU
+                {AD189C1A-07CE-4F4D-AA8A-93C0FEFD9D68}.Release|Any CPU.Build.0 = Release|Any CPU
+                {71037810-6ECC-438B-9BE4-5B9911A1B31D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+                {71037810-6ECC-438B-9BE4-5B9911A1B31D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+                {71037810-6ECC-438B-9BE4-5B9911A1B31D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+                {71037810-6ECC-438B-9BE4-5B9911A1B31D}.Release|Any CPU.Build.0 = Release|Any CPU
+        EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
