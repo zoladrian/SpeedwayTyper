@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using SpeedwayTyperApp.Server.Controllers;
+using SpeedwayTyperApp.Server.Repositories;
+using SpeedwayTyperApp.Server.Services;
 using SpeedwayTyperApp.Shared.Models;
 
 namespace SpeedwayTyperApp.Server.Tests
@@ -22,7 +24,9 @@ namespace SpeedwayTyperApp.Server.Tests
             userManager.Setup(m => m.AddToRoleAsync(It.IsAny<UserModel>(), It.IsAny<string>()))
                        .ReturnsAsync(IdentityResult.Success);
 
-            var controller = new AdminController(userManager.Object);
+            var inviteService = new Mock<IInviteService>();
+            var userRepository = new Mock<IUserRepository>();
+            var controller = new AdminController(userManager.Object, inviteService.Object, userRepository.Object);
 
             var model = new RegisterModel
             {
@@ -46,7 +50,9 @@ namespace SpeedwayTyperApp.Server.Tests
             userManager.Setup(m => m.CreateAsync(It.IsAny<UserModel>(), It.IsAny<string>()))
                        .ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "Invalid" }));
 
-            var controller = new AdminController(userManager.Object);
+            var inviteService = new Mock<IInviteService>();
+            var userRepository = new Mock<IUserRepository>();
+            var controller = new AdminController(userManager.Object, inviteService.Object, userRepository.Object);
 
             var model = new RegisterModel
             {
