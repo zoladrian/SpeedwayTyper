@@ -96,7 +96,7 @@
         StateHasChanged();
 
         var matches = await Http.GetFromJsonAsync<List<MatchModel>>("api/matches") ?? new List<MatchModel>();
-        var predictions = await Http.GetFromJsonAsync<List<PredictionModel>>("api/predictions/my") ?? new List<PredictionModel>();
+        var predictions = await Http.GetFromJsonAsync<List<PredictionModel>>("api/picks/my") ?? new List<PredictionModel>();
 
         _matchPredictions.Clear();
         foreach (var match in matches)
@@ -155,7 +155,7 @@
             HttpResponseMessage response;
             if (payload.PredictionId == 0)
             {
-                response = await Http.PostAsJsonAsync("api/predictions", payload);
+                response = await Http.PostAsJsonAsync("api/picks", payload);
                 if (response.IsSuccessStatusCode)
                 {
                     var created = await response.Content.ReadFromJsonAsync<PredictionModel>();
@@ -167,7 +167,7 @@
             }
             else
             {
-                response = await Http.PutAsJsonAsync($"api/predictions/{payload.PredictionId}", payload);
+                response = await Http.PutAsJsonAsync($"api/picks/{payload.PredictionId}", payload);
                 if (response.IsSuccessStatusCode)
                 {
                     if (item.Prediction != null)

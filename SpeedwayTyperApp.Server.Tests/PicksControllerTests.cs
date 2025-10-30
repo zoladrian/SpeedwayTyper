@@ -32,7 +32,7 @@ namespace SpeedwayTyperApp.Server.Tests
         }
 
         [Test]
-        public async Task CreatePrediction_ShouldReturnBadRequest_WhenMatchIsLocked()
+        public async Task CreatePrediction_ShouldReturnBadRequest_WhenMatchIsLocked_ForRegularUser()
         {
             var userId = "user-1";
             var controller = CreateController(userId);
@@ -42,7 +42,6 @@ namespace SpeedwayTyperApp.Server.Tests
             var prediction = new PredictionModel
             {
                 MatchId = match.MatchId,
-                UserId = userId,
                 HostTeamPredictedScore = 45,
                 GuestTeamPredictedScore = 45
             };
@@ -56,7 +55,7 @@ namespace SpeedwayTyperApp.Server.Tests
         }
 
         [Test]
-        public async Task UpdatePrediction_ShouldReturnBadRequest_WhenMatchIsLocked()
+        public async Task UpdatePrediction_ShouldReturnBadRequest_WhenMatchIsLocked_ForRegularUser()
         {
             var userId = "user-2";
             var controller = CreateController(userId);
@@ -80,7 +79,7 @@ namespace SpeedwayTyperApp.Server.Tests
         }
 
         [Test]
-        public async Task CreatePrediction_ShouldReturnCreated_WhenMatchIsOpen()
+        public async Task CreatePrediction_ShouldReturnCreated_WhenMatchIsOpen_ForRegularUser()
         {
             var userId = "user-3";
             var controller = CreateController(userId);
@@ -94,7 +93,6 @@ namespace SpeedwayTyperApp.Server.Tests
             var prediction = new PredictionModel
             {
                 MatchId = match.MatchId,
-                UserId = userId,
                 HostTeamPredictedScore = 50,
                 GuestTeamPredictedScore = 40
             };
@@ -106,6 +104,53 @@ namespace SpeedwayTyperApp.Server.Tests
             Assert.AreEqual(nameof(PicksController.GetPrediction), createdResult!.ActionName);
             Assert.AreEqual(99, ((PredictionModel)createdResult.Value!).PredictionId);
             _predictionService.Verify(s => s.AddPredictionAsync(It.Is<PredictionModel>(p => p.UserId == userId)), Times.Once);
+        }
+
+        [Test]
+        public async Task CreatePrediction_ShouldReturnBadRequest_WhenMatchIsLocked_ForAdmin()
+        {
+            var adminUserId = "admin-1";
+            var targetUserId = "target-user";
+            var controller = CreateController(adminUserId, "Admin");
+            var match = new MatchModel { MatchId = 5, Date = DateTime.UtcNow.AddMinutes(-1), IsCompleted = false };
+            _matchRepository.Setup(m => m.GetMatchByIdAsync(match.MatchId)).ReturnsAsync(match);
+
+            var prediction = new PredictionModel
+            {
+                MatchId = match.MatchId,
+                UserId = targetUserId,
+                HostTeamPredictedScore = 40,
+                GuestTeamPredictedScore = 50
+            };
+
+            var result = await controller.CreatePrediction(prediction);
+
+            Assert.IsInstanceOf<BadRequestObjectResult>(result);
+            _predictionService.Verify(s => s.AddPredictionAsync(It.IsAny<PredictionModel>()), Times.Never);
+        }
+
+        [Test]
+        public async Task UpdatePrediction_ShouldReturnBadRequest_WhenMatchIsLocked_ForAdmin()
+        {
+            var adminUserId = "admin-2";
+            var controller = CreateController(adminUserId, "Admin");
+            var existing = new PredictionModel
+            {
+                PredictionId = 22,
+                MatchId = 6,
+                UserId = "someone-else",
+                HostTeamPredictedScore = 46,
+                GuestTeamPredictedScore = 44
+            };
+
+            _predictionRepository.Setup(r => r.GetPredictionByIdAsync(existing.PredictionId)).ReturnsAsync(existing);
+            _matchRepository.Setup(m => m.GetMatchByIdAsync(existing.MatchId))
+                            .ReturnsAsync(new MatchModel { MatchId = existing.MatchId, Date = DateTime.UtcNow.AddMinutes(-2), IsCompleted = false });
+
+            var result = await controller.UpdatePrediction(existing.PredictionId, existing);
+
+            Assert.IsInstanceOf<BadRequestObjectResult>(result);
+            _predictionService.Verify(s => s.UpdatePredictionAsync(It.IsAny<PredictionModel>()), Times.Never);
         }
     }
 }

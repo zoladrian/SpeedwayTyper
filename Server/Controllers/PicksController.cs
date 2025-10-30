@@ -4,7 +4,6 @@ using SpeedwayTyperApp.Server.Repositories;
 using SpeedwayTyperApp.Server.Services;
 using SpeedwayTyperApp.Shared.Models;
 using System;
-using System.Linq;
 using System.Security.Claims;
 
 namespace SpeedwayTyperApp.Server.Controllers
@@ -26,6 +25,19 @@ namespace SpeedwayTyperApp.Server.Controllers
             _predictionRepository = predictionRepository;
             _predictionService = predictionService;
             _matchRepository = matchRepository;
+        }
+
+        [HttpGet("my")]
+        public async Task<IActionResult> GetMyPredictions()
+        {
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(currentUserId))
+            {
+                return Unauthorized();
+            }
+
+            var predictions = await _predictionRepository.GetPredictionsByUserAsync(currentUserId);
+            return Ok(predictions);
         }
 
         [HttpGet("user/{userId}")]
@@ -63,6 +75,17 @@ namespace SpeedwayTyperApp.Server.Controllers
             if (prediction == null)
             {
                 return BadRequest("Prediction payload is required.");
+            }
+
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(currentUserId))
+            {
+                return Unauthorized();
+            }
+
+            if (!User.IsInRole("Admin") || string.IsNullOrEmpty(prediction.UserId))
+            {
+                prediction.UserId = currentUserId;
             }
 
             if (!CanAccessUser(prediction.UserId))
