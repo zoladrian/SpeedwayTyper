@@ -1,4 +1,5 @@
-﻿using SpeedwayTyperApp.Server.DbContexts;
+﻿using Microsoft.EntityFrameworkCore;
+using SpeedwayTyperApp.Server.DbContexts;
 using SpeedwayTyperApp.Shared.Models;
 
 namespace SpeedwayTyperApp.Server.Repositories
@@ -15,6 +16,14 @@ namespace SpeedwayTyperApp.Server.Repositories
         public async Task<UserModel> GetUserByIdAsync(string userId)
         {
             return await _context.Users.FindAsync(userId);
+        }
+
+        public async Task<IEnumerable<UserModel>> GetAllUsersAsync()
+        {
+            return await _context.Users
+                                  .OrderByDescending(u => u.TotalPoints)
+                                  .ThenBy(u => u.UserName)
+                                  .ToListAsync();
         }
 
         public async Task UpdateUserAsync(UserModel user)

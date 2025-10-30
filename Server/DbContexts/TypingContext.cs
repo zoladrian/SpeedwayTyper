@@ -9,6 +9,7 @@ namespace SpeedwayTyperApp.Server.DbContexts
         public DbSet<TeamModel> Teams { get; set; }
         public DbSet<MatchModel> Matches { get; set; }
         public DbSet<PredictionModel> Predictions { get; set; }
+        public DbSet<InvitationModel> Invitations { get; set; }
 
         public TypingContext(DbContextOptions<TypingContext> options) : base(options)
         {

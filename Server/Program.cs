@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using SpeedwayTyperApp.Shared.Models;
 using SpeedwayTyperApp.Server.Services;
+using SpeedwayTyperApp.Server.Repositories;
 using System.Text;
 using SpeedwayTyperApp.Server.DbContexts;
 
@@ -41,6 +42,12 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IMatchRepository, MatchRepository>();
+builder.Services.AddScoped<IPredictionRepository, PredictionRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IPredictionService, PredictionService>();
+builder.Services.AddScoped<ITeamRepository, TeamRepository>();
+builder.Services.AddScoped<IInvitationRepository, InvitationRepository>();
 
 builder.Services.AddSwaggerGen(c =>
 {

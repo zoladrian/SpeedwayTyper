@@ -1,6 +1,7 @@
 ﻿@page "/matches"
 @using SpeedwayTyperApp.Shared.Models
 @inject HttpClient Http
+@inject NotificationService NotificationService
 
 <div class="container">
     <div class="banner"></div>
@@ -11,24 +12,209 @@
             <RadzenTabsItem Text=@($"Runda {round}")>
                 <RadzenGrid Data="@_matches.Where(m => m.Round == round)" class="custom-grid">
                     <Columns>
+                        <RadzenGridColumn TItem="MatchModel" Property="Date" Title="Data">
+                            <Template Context="match">@match.Date.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</Template>
+                        </RadzenGridColumn>
                         <RadzenGridColumn TItem="MatchModel" Property="HostTeam.Name" Title="Drużyna gospodarzy" />
                         <RadzenGridColumn TItem="MatchModel" Property="GuestTeam.Name" Title="Drużyna gości" />
                         <RadzenGridColumn TItem="MatchModel" Property="HostTeamScore" Title="Wynik gospodarzy" />
                         <RadzenGridColumn TItem="MatchModel" Property="GuestTeamScore" Title="Wynik gości" />
+                        <RadzenGridColumn TItem="MatchModel" Property="IsCompleted" Title="Zakończony">
+                            <Template Context="match">@(match.IsCompleted ? "Tak" : "Nie")</Template>
+                        </RadzenGridColumn>
                     </Columns>
                 </RadzenGrid>
             </RadzenTabsItem>
         }
     </RadzenTabs>
+
+    <AuthorizeView Roles="Admin">
+        <Authorized>
+            <div class="mt-4">
+                <h4>Zarządzanie meczami</h4>
+                <RadzenButton Text="Dodaj mecz" Icon="add_circle_outline" class="mb-2" Click="AddMatchAsync" />
+                <RadzenDataGrid TItem="MatchModel" Data="_matches" @ref="_matchesGrid" AllowPaging="true" AllowSorting="true"
+                                 PageSize="10" EditMode="DataGridEditMode.Single" RowUpdate="OnUpdateMatchAsync"
+                                 RowCreate="OnCreateMatchAsync" class="custom-grid">
+                    <Columns>
+                        <RadzenGridColumn TItem="MatchModel" Property="Date" Title="Data">
+                            <Template Context="match">@match.Date.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</Template>
+                            <EditTemplate Context="match">
+                                <RadzenDatePicker @bind-Value="match.Date" DateFormat="dd.MM.yyyy HH:mm" ShowTime="true" Style="width:220px" />
+                            </EditTemplate>
+                        </RadzenGridColumn>
+                        <RadzenGridColumn TItem="MatchModel" Property="Round" Title="Runda">
+                            <EditTemplate Context="match">
+                                <RadzenNumeric @bind-Value="match.Round" TValue="int" Min="1" Max="30" Style="width:120px" />
+                            </EditTemplate>
+                        </RadzenGridColumn>
+                        <RadzenGridColumn TItem="MatchModel" Property="HostTeamId" Title="Gospodarze">
+                            <Template Context="match">@match.HostTeam?.Name</Template>
+                            <EditTemplate Context="match">
+                                <RadzenDropDown Data="_teams" TextProperty="Name" ValueProperty="TeamId" @bind-Value="match.HostTeamId" Style="width:220px" />
+                            </EditTemplate>
+                        </RadzenGridColumn>
+                        <RadzenGridColumn TItem="MatchModel" Property="GuestTeamId" Title="Goście">
+                            <Template Context="match">@match.GuestTeam?.Name</Template>
+                            <EditTemplate Context="match">
+                                <RadzenDropDown Data="_teams" TextProperty="Name" ValueProperty="TeamId" @bind-Value="match.GuestTeamId" Style="width:220px" />
+                            </EditTemplate>
+                        </RadzenGridColumn>
+                        <RadzenGridColumn TItem="MatchModel" Property="HostTeamScore" Title="Punkty gospodarzy">
+                            <EditTemplate Context="match">
+                                <RadzenNumeric @bind-Value="match.HostTeamScore" TValue="int?" Min="0" Max="90" Style="width:120px" />
+                            </EditTemplate>
+                        </RadzenGridColumn>
+                        <RadzenGridColumn TItem="MatchModel" Property="GuestTeamScore" Title="Punkty gości">
+                            <EditTemplate Context="match">
+                                <RadzenNumeric @bind-Value="match.GuestTeamScore" TValue="int?" Min="0" Max="90" Style="width:120px" />
+                            </EditTemplate>
+                        </RadzenGridColumn>
+                        <RadzenGridColumn TItem="MatchModel" Property="IsCompleted" Title="Zakończony">
+                            <Template Context="match">@(match.IsCompleted ? "Tak" : "Nie")</Template>
+                            <EditTemplate Context="match">
+                                <RadzenCheckBox @bind-Value="match.IsCompleted" TriState="false" />
+                            </EditTemplate>
+                        </RadzenGridColumn>
+                        <RadzenGridColumn TItem="MatchModel" Context="match" Title="Akcje" Width="200px">
+                            <Template>
+                                <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small" Click="() => EditRow(match)" class="mr-1" />
+                                <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Click="async () => await DeleteMatchAsync(match)" />
+                            </Template>
+                            <EditTemplate>
+                                <RadzenButton Icon="save" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small" Click="async () => await SaveRowAsync(match)" class="mr-1" />
+                                <RadzenButton Icon="cancel" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" Click="() => CancelEdit(match)" />
+                            </EditTemplate>
+                        </RadzenGridColumn>
+                    </Columns>
+                </RadzenDataGrid>
+            </div>
+        </Authorized>
+    </AuthorizeView>
 </div>
 
 @code {
-    private List<MatchModel> _matches = new List<MatchModel>();
-    private List<int> _rounds = new List<int>();
+    private List<MatchModel> _matches = new();
+    private List<int> _rounds = new();
+    private List<TeamModel> _teams = new();
+    private RadzenDataGrid<MatchModel>? _matchesGrid;
+    private MatchModel? _matchToInsert;
 
     protected override async Task OnInitializedAsync()
     {
-        _matches = await Http.GetFromJsonAsync<List<MatchModel>>("api/Matches");
-        _rounds = _matches.Select(m => m.Round).Distinct().ToList();
+        await LoadTeamsAsync();
+        await LoadMatchesAsync();
+    }
+
+    private async Task LoadTeamsAsync()
+    {
+        try
+        {
+            _teams = await Http.GetFromJsonAsync<List<TeamModel>>("api/teams") ?? new List<TeamModel>();
+        }
+        catch (HttpRequestException)
+        {
+            _teams = new List<TeamModel>();
+        }
+    }
+
+    private async Task LoadMatchesAsync()
+    {
+        _matches = await Http.GetFromJsonAsync<List<MatchModel>>("api/matches") ?? new List<MatchModel>();
+        _matches = _matches.OrderBy(m => m.Round).ThenBy(m => m.Date).ToList();
+        _rounds = _matches.Select(m => m.Round).Distinct().OrderBy(r => r).ToList();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task AddMatchAsync()
+    {
+        if (_matchesGrid == null)
+        {
+            return;
+        }
+
+        _matchToInsert = new MatchModel
+        {
+            Date = DateTime.UtcNow,
+            Round = _rounds.Any() ? _rounds.Max() : 1,
+            IsCompleted = false
+        };
+
+        _matches.Insert(0, _matchToInsert);
+        await _matchesGrid.InsertRow(_matchToInsert);
+    }
+
+    private void EditRow(MatchModel match)
+    {
+        _matchesGrid?.EditRow(match);
+    }
+
+    private void CancelEdit(MatchModel match)
+    {
+        _matchesGrid?.CancelEditRow(match);
+        if (_matchToInsert == match)
+        {
+            _matchToInsert = null;
+            _matches.Remove(match);
+        }
+    }
+
+    private async Task SaveRowAsync(MatchModel match)
+    {
+        if (_matchesGrid == null)
+        {
+            return;
+        }
+
+        await _matchesGrid.UpdateRow(match);
+    }
+
+    private async Task OnCreateMatchAsync(MatchModel match)
+    {
+        var response = await Http.PostAsJsonAsync("api/matches", match);
+        if (response.IsSuccessStatusCode)
+        {
+            NotificationService.Notify(NotificationSeverity.Success, "Mecz dodany", "Nowy mecz został utworzony.");
+            _matchToInsert = null;
+            await LoadMatchesAsync();
+        }
+        else
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Nie udało się dodać meczu", await response.Content.ReadAsStringAsync());
+            _matchesGrid?.CancelEditRow(match);
+            if (_matchToInsert == match)
+            {
+                _matches.Remove(match);
+                _matchToInsert = null;
+            }
+        }
+    }
+
+    private async Task OnUpdateMatchAsync(MatchModel match)
+    {
+        var response = await Http.PutAsJsonAsync($"api/matches/{match.MatchId}", match);
+        if (response.IsSuccessStatusCode)
+        {
+            NotificationService.Notify(NotificationSeverity.Success, "Mecz zaktualizowany", "Dane meczu zostały zapisane.");
+            await LoadMatchesAsync();
+        }
+        else
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Nie udało się zaktualizować meczu", await response.Content.ReadAsStringAsync());
+        }
+    }
+
+    private async Task DeleteMatchAsync(MatchModel match)
+    {
+        var response = await Http.DeleteAsync($"api/matches/{match.MatchId}");
+        if (response.IsSuccessStatusCode)
+        {
+            NotificationService.Notify(NotificationSeverity.Success, "Mecz usunięty", "Mecz został usunięty z terminarza.");
+            await LoadMatchesAsync();
+        }
+        else
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Nie udało się usunąć meczu", await response.Content.ReadAsStringAsync());
+        }
     }
 }
