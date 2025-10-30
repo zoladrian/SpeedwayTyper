@@ -190,6 +190,42 @@ namespace SpeedwayTyperApp.Server.Migrations
                     b.ToTable("Matches");
                 });
 
+            modelBuilder.Entity("SpeedwayTyperApp.Shared.Models.InviteCodeModel", b =>
+                {
+                    b.Property<int>("InviteCodeId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("InviteCodeId"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("CreatedById")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("ExpirationDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("MaxUses")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Uses")
+                        .HasColumnType("integer");
+
+                    b.HasKey("InviteCodeId");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("CreatedById");
+
+                    b.ToTable("InviteCodes");
+                });
+
             modelBuilder.Entity("SpeedwayTyperApp.Shared.Models.PredictionModel", b =>
                 {
                     b.Property<int>("PredictionId")
@@ -266,7 +302,7 @@ namespace SpeedwayTyperApp.Server.Migrations
                         .HasColumnType("character varying(256)");
 
                     b.Property<bool>("IsPendingApproval")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("boolean");
@@ -317,6 +353,15 @@ namespace SpeedwayTyperApp.Server.Migrations
                         .HasDatabaseName("UserNameIndex");
 
                     b.ToTable("AspNetUsers", (string)null);
+                });
+
+            modelBuilder.Entity("SpeedwayTyperApp.Shared.Models.InviteCodeModel", b =>
+                {
+                    b.HasOne("SpeedwayTyperApp.Shared.Models.UserModel", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("SpeedwayTyperApp.Shared.Models.MatchModel", b =>
