@@ -15,7 +15,38 @@ namespace SpeedwayTyperApp.Server.Repositories
 
         public async Task<IEnumerable<PredictionModel>> GetPredictionsByUserAsync(string userId)
         {
-            return await _context.Predictions.Where(p => p.UserId.Equals(userId)).ToListAsync();
+            return await _context.Predictions
+                                 .Include(p => p.Match)
+                                     .ThenInclude(m => m.HostTeam)
+                                 .Include(p => p.Match)
+                                     .ThenInclude(m => m.GuestTeam)
+                                 .Where(p => p.UserId.Equals(userId))
+                                 .OrderByDescending(p => p.Match.Date)
+                                 .ToListAsync();
+        }
+
+        public async Task<PredictionModel?> GetPredictionByIdAsync(int predictionId)
+        {
+            return await _context.Predictions
+                                 .Include(p => p.Match)
+                                     .ThenInclude(m => m.HostTeam)
+                                 .Include(p => p.Match)
+                                     .ThenInclude(m => m.GuestTeam)
+                                 .FirstOrDefaultAsync(p => p.PredictionId == predictionId);
+        }
+
+        public async Task<PredictionModel?> GetPredictionByUserAndMatchAsync(string userId, int matchId)
+        {
+            return await _context.Predictions
+                                 .FirstOrDefaultAsync(p => p.UserId.Equals(userId) && p.MatchId == matchId);
+        }
+
+        public async Task<IEnumerable<PredictionModel>> GetPredictionsForMatchAsync(int matchId)
+        {
+            return await _context.Predictions
+                                 .Include(p => p.User)
+                                 .Where(p => p.MatchId == matchId)
+                                 .ToListAsync();
         }
 
         public async Task AddPredictionAsync(PredictionModel prediction)

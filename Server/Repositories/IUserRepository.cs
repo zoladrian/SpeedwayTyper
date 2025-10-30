@@ -4,6 +4,7 @@ namespace SpeedwayTyperApp.Server.Repositories
 {
     public interface IUserRepository
     {
+        Task<IEnumerable<UserModel>> GetAllUsersAsync();
         Task<UserModel> GetUserByIdAsync(string userId);
         Task UpdateUserAsync(UserModel user);
     }
