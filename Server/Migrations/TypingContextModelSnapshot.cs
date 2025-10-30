@@ -155,7 +155,7 @@ namespace SpeedwayTyperApp.Server.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("SpeedwayTyperApp.Server.Models.Match", b =>
+            modelBuilder.Entity("SpeedwayTyperApp.Shared.Models.MatchModel", b =>
                 {
                     b.Property<int>("MatchId")
                         .ValueGeneratedOnAdd()
@@ -163,25 +163,37 @@ namespace SpeedwayTyperApp.Server.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MatchId"));
 
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("datetime2");
-
                     b.Property<int>("GuestTeamId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("GuestTeamScore")
+                    b.Property<int?>("GuestScore")
                         .HasColumnType("int");
 
                     b.Property<int>("HostTeamId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("HostTeamScore")
+                    b.Property<int?>("HostScore")
                         .HasColumnType("int");
 
-                    b.Property<bool>("IsCompleted")
-                        .HasColumnType("bit");
+                    b.Property<string>("RescheduleReason")
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("Round")
+                    b.Property<DateTime?>("RescheduledFromUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("RescheduledToUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("RoundId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SeasonId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("StartTimeUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Status")
                         .HasColumnType("int");
 
                     b.HasKey("MatchId");
@@ -190,10 +202,14 @@ namespace SpeedwayTyperApp.Server.Migrations
 
                     b.HasIndex("HostTeamId");
 
+                    b.HasIndex("RoundId");
+
+                    b.HasIndex("SeasonId");
+
                     b.ToTable("Matches");
                 });
 
-            modelBuilder.Entity("SpeedwayTyperApp.Server.Models.Prediction", b =>
+            modelBuilder.Entity("SpeedwayTyperApp.Shared.Models.PredictionModel", b =>
                 {
                     b.Property<int>("PredictionId")
                         .ValueGeneratedOnAdd()
@@ -232,7 +248,60 @@ namespace SpeedwayTyperApp.Server.Migrations
                     b.ToTable("Predictions");
                 });
 
-            modelBuilder.Entity("SpeedwayTyperApp.Server.Models.Team", b =>
+            modelBuilder.Entity("SpeedwayTyperApp.Shared.Models.RoundModel", b =>
+                {
+                    b.Property<int>("RoundId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RoundId"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SeasonId")
+                        .HasColumnType("int");
+
+                    b.HasKey("RoundId");
+
+                    b.HasIndex("SeasonId");
+
+                    b.ToTable("Rounds");
+                });
+
+            modelBuilder.Entity("SpeedwayTyperApp.Shared.Models.SeasonModel", b =>
+                {
+                    b.Property<int>("SeasonId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SeasonId"));
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("EndDateUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("StartDateUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("SeasonId");
+
+                    b.ToTable("Seasons");
+                });
+
+            modelBuilder.Entity("SpeedwayTyperApp.Shared.Models.TeamModel", b =>
                 {
                     b.Property<int>("TeamId")
                         .ValueGeneratedOnAdd()
@@ -249,7 +318,7 @@ namespace SpeedwayTyperApp.Server.Migrations
                     b.ToTable("Teams");
                 });
 
-            modelBuilder.Entity("SpeedwayTyperApp.Server.Models.User", b =>
+            modelBuilder.Entity("SpeedwayTyperApp.Shared.Models.UserModel", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
@@ -331,7 +400,7 @@ namespace SpeedwayTyperApp.Server.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("SpeedwayTyperApp.Server.Models.User", null)
+                    b.HasOne("SpeedwayTyperApp.Shared.Models.UserModel", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -340,7 +409,7 @@ namespace SpeedwayTyperApp.Server.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("SpeedwayTyperApp.Server.Models.User", null)
+                    b.HasOne("SpeedwayTyperApp.Shared.Models.UserModel", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -355,7 +424,7 @@ namespace SpeedwayTyperApp.Server.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("SpeedwayTyperApp.Server.Models.User", null)
+                    b.HasOne("SpeedwayTyperApp.Shared.Models.UserModel", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -364,41 +433,57 @@ namespace SpeedwayTyperApp.Server.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("SpeedwayTyperApp.Server.Models.User", null)
+                    b.HasOne("SpeedwayTyperApp.Shared.Models.UserModel", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("SpeedwayTyperApp.Server.Models.Match", b =>
+            modelBuilder.Entity("SpeedwayTyperApp.Shared.Models.MatchModel", b =>
                 {
-                    b.HasOne("SpeedwayTyperApp.Server.Models.Team", "GuestTeam")
+                    b.HasOne("SpeedwayTyperApp.Shared.Models.TeamModel", "GuestTeam")
                         .WithMany()
                         .HasForeignKey("GuestTeamId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("SpeedwayTyperApp.Server.Models.Team", "HostTeam")
+                    b.HasOne("SpeedwayTyperApp.Shared.Models.TeamModel", "HostTeam")
                         .WithMany()
                         .HasForeignKey("HostTeamId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("SpeedwayTyperApp.Shared.Models.RoundModel", "Round")
+                        .WithMany()
+                        .HasForeignKey("RoundId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SpeedwayTyperApp.Shared.Models.SeasonModel", "Season")
+                        .WithMany()
+                        .HasForeignKey("SeasonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("GuestTeam");
 
                     b.Navigation("HostTeam");
+
+                    b.Navigation("Round");
+
+                    b.Navigation("Season");
                 });
 
-            modelBuilder.Entity("SpeedwayTyperApp.Server.Models.Prediction", b =>
+            modelBuilder.Entity("SpeedwayTyperApp.Shared.Models.PredictionModel", b =>
                 {
-                    b.HasOne("SpeedwayTyperApp.Server.Models.Match", "Match")
+                    b.HasOne("SpeedwayTyperApp.Shared.Models.MatchModel", "Match")
                         .WithMany()
                         .HasForeignKey("MatchId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("SpeedwayTyperApp.Server.Models.User", "User")
+                    b.HasOne("SpeedwayTyperApp.Shared.Models.UserModel", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -407,6 +492,17 @@ namespace SpeedwayTyperApp.Server.Migrations
                     b.Navigation("Match");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("SpeedwayTyperApp.Shared.Models.RoundModel", b =>
+                {
+                    b.HasOne("SpeedwayTyperApp.Shared.Models.SeasonModel", "Season")
+                        .WithMany()
+                        .HasForeignKey("SeasonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Season");
                 });
 #pragma warning restore 612, 618
         }

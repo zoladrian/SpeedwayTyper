@@ -21,6 +21,13 @@ body {
     margin-bottom: 20px;
 }
 
+.filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 20px;
+}
+
 .row {
     display: flex;
     flex-wrap: wrap;

@@ -1,34 +1,216 @@
-﻿@page "/matches"
+@page "/matches"
 @using SpeedwayTyperApp.Shared.Models
+@using System.Collections.Generic
+@using System.Linq
 @inject HttpClient Http
 
 <div class="container">
     <div class="banner"></div>
     <h3>Mecze</h3>
-    <RadzenTabs>
-        @foreach (var round in _rounds)
-        {
-            <RadzenTabsItem Text=@($"Runda {round}")>
-                <RadzenGrid Data="@_matches.Where(m => m.Round == round)" class="custom-grid">
-                    <Columns>
-                        <RadzenGridColumn TItem="MatchModel" Property="HostTeam.Name" Title="Drużyna gospodarzy" />
-                        <RadzenGridColumn TItem="MatchModel" Property="GuestTeam.Name" Title="Drużyna gości" />
-                        <RadzenGridColumn TItem="MatchModel" Property="HostTeamScore" Title="Wynik gospodarzy" />
-                        <RadzenGridColumn TItem="MatchModel" Property="GuestTeamScore" Title="Wynik gości" />
-                    </Columns>
-                </RadzenGrid>
-            </RadzenTabsItem>
-        }
-    </RadzenTabs>
+
+    <div class="filters">
+        <RadzenDropDown TValue="int?"
+                        Data="@_seasons"
+                        TextProperty="Name"
+                        ValueProperty="SeasonId"
+                        Value="@_selectedSeasonId"
+                        ValueChanged="OnSeasonChanged"
+                        ValueExpression="@(() => _selectedSeasonId)"
+                        Placeholder="Wybierz sezon"
+                        Style="width: 250px; margin-right: 1rem;" />
+
+        <RadzenDropDown TValue="int?"
+                        Data="@_rounds"
+                        TextProperty="Name"
+                        ValueProperty="RoundId"
+                        Value="@_selectedRoundId"
+                        ValueChanged="OnRoundChanged"
+                        ValueExpression="@(() => _selectedRoundId)"
+                        Placeholder="Wszystkie rundy"
+                        AllowClear="true"
+                        Style="width: 250px;" />
+    </div>
+
+    @if (_isLoading)
+    {
+        <p>Ładowanie danych meczowych...</p>
+    }
+    else if (_matches.Count == 0)
+    {
+        <p>Brak meczów spełniających wybrane kryteria.</p>
+    }
+    else
+    {
+        <RadzenGrid Data="@_matches" TItem="MatchModel" class="custom-grid">
+            <Columns>
+                <RadzenGridColumn TItem="MatchModel" Title="Sezon">
+                    <Template Context="match">@match.Season?.Name</Template>
+                </RadzenGridColumn>
+                <RadzenGridColumn TItem="MatchModel" Title="Runda">
+                    <Template Context="match">@match.Round?.Name</Template>
+                </RadzenGridColumn>
+                <RadzenGridColumn TItem="MatchModel" Title="Drużyna gospodarzy">
+                    <Template Context="match">@match.HostTeam?.Name</Template>
+                </RadzenGridColumn>
+                <RadzenGridColumn TItem="MatchModel" Title="Drużyna gości">
+                    <Template Context="match">@match.GuestTeam?.Name</Template>
+                </RadzenGridColumn>
+                <RadzenGridColumn TItem="MatchModel" Title="Start">
+                    <Template Context="match">@FormatDate(match.StartTimeUtc)</Template>
+                </RadzenGridColumn>
+                <RadzenGridColumn TItem="MatchModel" Title="Status">
+                    <Template Context="match">
+                        <RadzenBadge Style="margin:0;" Text="@GetStatusLabel(match.Status)" Class="@GetStatusClass(match.Status)" />
+                    </Template>
+                </RadzenGridColumn>
+                <RadzenGridColumn TItem="MatchModel" Title="Wynik gospodarzy" Property="HostScore" />
+                <RadzenGridColumn TItem="MatchModel" Title="Wynik gości" Property="GuestScore" />
+                <RadzenGridColumn TItem="MatchModel" Title="Przełożenie">
+                    <Template Context="match">@RenderReschedule(match)</Template>
+                </RadzenGridColumn>
+            </Columns>
+        </RadzenGrid>
+    }
 </div>
 
 @code {
-    private List<MatchModel> _matches = new List<MatchModel>();
-    private List<int> _rounds = new List<int>();
+    private readonly List<SeasonModel> _seasons = new();
+    private readonly List<RoundModel> _rounds = new();
+    private readonly List<MatchModel> _matches = new();
+
+    private int? _selectedSeasonId;
+    private int? _selectedRoundId;
+    private bool _isLoading;
 
     protected override async Task OnInitializedAsync()
     {
-        _matches = await Http.GetFromJsonAsync<List<MatchModel>>("api/Matches");
-        _rounds = _matches.Select(m => m.Round).Distinct().ToList();
+        await LoadSeasonsAsync();
+        if (_seasons.Count > 0)
+        {
+            _selectedSeasonId = _seasons.FirstOrDefault(season => season.IsActive)?.SeasonId ?? _seasons.First().SeasonId;
+            await LoadRoundsAsync();
+            await LoadMatchesAsync();
+        }
     }
+
+    private async Task LoadSeasonsAsync()
+    {
+        var seasons = await Http.GetFromJsonAsync<List<SeasonModel>>("api/Seasons");
+        _seasons.Clear();
+        if (seasons != null)
+        {
+            _seasons.AddRange(seasons);
+        }
+    }
+
+    private async Task LoadRoundsAsync()
+    {
+        _rounds.Clear();
+        if (_selectedSeasonId.HasValue)
+        {
+            var rounds = await Http.GetFromJsonAsync<List<RoundModel>>($"api/Rounds?seasonId={_selectedSeasonId.Value}");
+            if (rounds != null)
+            {
+                _rounds.AddRange(rounds);
+            }
+        }
+        _selectedRoundId = null;
+    }
+
+    private async Task LoadMatchesAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            var queryParameters = new List<string>();
+            if (_selectedSeasonId.HasValue)
+            {
+                queryParameters.Add($"seasonId={_selectedSeasonId.Value}");
+            }
+            if (_selectedRoundId.HasValue)
+            {
+                queryParameters.Add($"roundId={_selectedRoundId.Value}");
+            }
+
+            var queryString = queryParameters.Count > 0 ? $"?{string.Join("&", queryParameters)}" : string.Empty;
+            var matches = await Http.GetFromJsonAsync<List<MatchModel>>($"api/Matches{queryString}");
+            _matches.Clear();
+            if (matches != null)
+            {
+                _matches.AddRange(matches);
+            }
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task OnSeasonChanged(int? value)
+    {
+        _selectedSeasonId = value;
+        await LoadRoundsAsync();
+        await LoadMatchesAsync();
+    }
+
+    private async Task OnRoundChanged(int? value)
+    {
+        _selectedRoundId = value;
+        await LoadMatchesAsync();
+    }
+
+    private static string FormatDate(DateTime dateTimeUtc)
+    {
+        return dateTimeUtc.ToLocalTime().ToString("dd.MM.yyyy HH:mm");
+    }
+
+    private static string GetStatusLabel(MatchStatus status) => status switch
+    {
+        MatchStatus.Scheduled => "Zaplanowany",
+        MatchStatus.Live => "W trakcie",
+        MatchStatus.Completed => "Zakończony",
+        MatchStatus.Postponed => "Przełożony",
+        MatchStatus.Cancelled => "Odwołany",
+        _ => status.ToString()
+    };
+
+    private static string GetStatusClass(MatchStatus status) => status switch
+    {
+        MatchStatus.Scheduled => "badge badge-info",
+        MatchStatus.Live => "badge badge-warning",
+        MatchStatus.Completed => "badge badge-success",
+        MatchStatus.Postponed => "badge badge-secondary",
+        MatchStatus.Cancelled => "badge badge-danger",
+        _ => "badge"
+    };
+
+    private static RenderFragment RenderReschedule(MatchModel match) => builder =>
+    {
+        if (!string.IsNullOrWhiteSpace(match.RescheduleReason) || match.RescheduledToUtc.HasValue || match.RescheduledFromUtc.HasValue)
+        {
+            var sequence = 0;
+            if (match.RescheduledFromUtc.HasValue)
+            {
+                builder.AddContent(sequence++, $"Z pierwotnego terminu: {FormatDate(match.RescheduledFromUtc.Value)}");
+            }
+
+            if (match.RescheduledToUtc.HasValue)
+            {
+                if (sequence > 0)
+                {
+                    builder.AddMarkupContent(sequence++, "<br />");
+                }
+                builder.AddContent(sequence++, $"Nowy termin: {FormatDate(match.RescheduledToUtc.Value)}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(match.RescheduleReason))
+            {
+                if (sequence > 0)
+                {
+                    builder.AddMarkupContent(sequence++, "<br />");
+                }
+                builder.AddContent(sequence++, match.RescheduleReason);
+            }
+        }
+    };
 }

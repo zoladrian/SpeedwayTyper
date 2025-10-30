@@ -1,6 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using SpeedwayTyperApp.Server.DbContexts;
 using SpeedwayTyperApp.Shared.Models;
+using System.Linq;
 
 namespace SpeedwayTyperApp.Server.Repositories
 {
@@ -15,7 +16,9 @@ namespace SpeedwayTyperApp.Server.Repositories
 
         public async Task<IEnumerable<PredictionModel>> GetPredictionsByUserAsync(string userId)
         {
-            return await _context.Predictions.Where(p => p.UserId.Equals(userId)).ToListAsync();
+            return await _context.Predictions
+                .Where(p => p.UserId.Equals(userId))
+                .ToListAsync();
         }
 
         public async Task AddPredictionAsync(PredictionModel prediction)
@@ -30,5 +33,4 @@ namespace SpeedwayTyperApp.Server.Repositories
             await _context.SaveChangesAsync();
         }
     }
-
 }

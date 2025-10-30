@@ -1,5 +1,6 @@
-﻿using SpeedwayTyperApp.Server.Repositories;
+using SpeedwayTyperApp.Server.Repositories;
 using SpeedwayTyperApp.Shared.Models;
+using System.Linq;
 
 namespace SpeedwayTyperApp.Server.Services
 {
@@ -19,14 +20,14 @@ namespace SpeedwayTyperApp.Server.Services
         public async Task<int> CalculatePointsAsync(PredictionModel prediction)
         {
             var match = await _matchRepository.GetMatchByIdAsync(prediction.MatchId);
-            if (match == null || !match.IsCompleted)
+            if (match == null || match.Status != MatchStatus.Completed || !match.HostScore.HasValue || !match.GuestScore.HasValue)
             {
                 return 0;
             }
 
             var predictedDifference = Math.Abs(prediction.HostTeamPredictedScore - prediction.GuestTeamPredictedScore);
-            var actualDifference = Math.Abs(match.HostTeamScore.Value - match.GuestTeamScore.Value);
-            bool typicalResult = match.HostTeamScore.Value == match.GuestTeamScore.Value;
+            var actualDifference = Math.Abs(match.HostScore.Value - match.GuestScore.Value);
+            bool typicalResult = match.HostScore.Value == match.GuestScore.Value;
             int points = 0;
 
             if (predictedDifference == actualDifference && typicalResult)
@@ -36,8 +37,8 @@ namespace SpeedwayTyperApp.Server.Services
                     points = 50;
                     prediction.AccurateResult = true;
                 }
-                else if (prediction.HostTeamPredictedScore == match.HostTeamScore &&
-                         prediction.GuestTeamPredictedScore == match.GuestTeamScore)
+                else if (prediction.HostTeamPredictedScore == match.HostScore &&
+                         prediction.GuestTeamPredictedScore == match.GuestScore)
                 {
                     points = 35;
                     prediction.AccurateResult = true;
@@ -70,9 +71,9 @@ namespace SpeedwayTyperApp.Server.Services
             }
 
             if ((prediction.HostTeamPredictedScore > prediction.GuestTeamPredictedScore &&
-                 match.HostTeamScore <= match.GuestTeamScore) ||
+                 match.HostScore <= match.GuestScore) ||
                 (prediction.HostTeamPredictedScore < prediction.GuestTeamPredictedScore &&
-                 match.HostTeamScore >= match.GuestTeamScore))
+                 match.HostScore >= match.GuestScore))
             {
                 points = 0;
             }

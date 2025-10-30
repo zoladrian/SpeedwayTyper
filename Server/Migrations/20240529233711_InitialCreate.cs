@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -50,6 +50,22 @@ namespace SpeedwayTyperApp.Server.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AspNetUsers", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Seasons",
+                columns: table => new
+                {
+                    SeasonId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    StartDateUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    EndDateUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Seasons", x => x.SeasonId);
                 });
 
             migrationBuilder.CreateTable(
@@ -172,22 +188,59 @@ namespace SpeedwayTyperApp.Server.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Rounds",
+                columns: table => new
+                {
+                    RoundId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    SeasonId = table.Column<int>(type: "int", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Order = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Rounds", x => x.RoundId);
+                    table.ForeignKey(
+                        name: "FK_Rounds_Seasons_SeasonId",
+                        column: x => x.SeasonId,
+                        principalTable: "Seasons",
+                        principalColumn: "SeasonId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Matches",
                 columns: table => new
                 {
                     MatchId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Date = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Round = table.Column<int>(type: "int", nullable: false),
+                    SeasonId = table.Column<int>(type: "int", nullable: false),
+                    RoundId = table.Column<int>(type: "int", nullable: false),
                     HostTeamId = table.Column<int>(type: "int", nullable: false),
                     GuestTeamId = table.Column<int>(type: "int", nullable: false),
-                    HostTeamScore = table.Column<int>(type: "int", nullable: true),
-                    GuestTeamScore = table.Column<int>(type: "int", nullable: true),
-                    IsCompleted = table.Column<bool>(type: "bit", nullable: false)
+                    StartTimeUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    HostScore = table.Column<int>(type: "int", nullable: true),
+                    GuestScore = table.Column<int>(type: "int", nullable: true),
+                    RescheduledFromUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    RescheduledToUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    RescheduleReason = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Matches", x => x.MatchId);
+                    table.ForeignKey(
+                        name: "FK_Matches_Rounds_RoundId",
+                        column: x => x.RoundId,
+                        principalTable: "Rounds",
+                        principalColumn: "RoundId",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Matches_Seasons_SeasonId",
+                        column: x => x.SeasonId,
+                        principalTable: "Seasons",
+                        principalColumn: "SeasonId",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Matches_Teams_GuestTeamId",
                         column: x => x.GuestTeamId,
@@ -283,6 +336,16 @@ namespace SpeedwayTyperApp.Server.Migrations
                 column: "HostTeamId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Matches_RoundId",
+                table: "Matches",
+                column: "RoundId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Matches_SeasonId",
+                table: "Matches",
+                column: "SeasonId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Predictions_MatchId",
                 table: "Predictions",
                 column: "MatchId");
@@ -291,6 +354,11 @@ namespace SpeedwayTyperApp.Server.Migrations
                 name: "IX_Predictions_UserId",
                 table: "Predictions",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Rounds_SeasonId",
+                table: "Rounds",
+                column: "SeasonId");
         }
 
         /// <inheritdoc />
@@ -324,7 +392,13 @@ namespace SpeedwayTyperApp.Server.Migrations
                 name: "Matches");
 
             migrationBuilder.DropTable(
+                name: "Rounds");
+
+            migrationBuilder.DropTable(
                 name: "Teams");
+
+            migrationBuilder.DropTable(
+                name: "Seasons");
         }
     }
 }

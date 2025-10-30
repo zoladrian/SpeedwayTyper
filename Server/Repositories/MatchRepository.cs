@@ -1,6 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using SpeedwayTyperApp.Server.DbContexts;
 using SpeedwayTyperApp.Shared.Models;
+using System.Linq;
 
 namespace SpeedwayTyperApp.Server.Repositories
 {
@@ -13,21 +14,48 @@ namespace SpeedwayTyperApp.Server.Repositories
             _context = context;
         }
 
-        public async Task<IEnumerable<MatchModel>> GetAllMatchesAsync()
+        public async Task<IEnumerable<MatchModel>> GetMatchesAsync(int? seasonId = null, int? roundId = null)
         {
-            return await _context.Matches.Include(m => m.HostTeam).Include(m => m.GuestTeam).ToListAsync();
+            var query = _context.Matches
+                .AsNoTracking()
+                .Include(match => match.HostTeam)
+                .Include(match => match.GuestTeam)
+                .Include(match => match.Season)
+                .Include(match => match.Round)
+                .AsQueryable();
+
+            if (seasonId.HasValue)
+            {
+                query = query.Where(match => match.SeasonId == seasonId.Value);
+            }
+
+            if (roundId.HasValue)
+            {
+                query = query.Where(match => match.RoundId == roundId.Value);
+            }
+
+            return await query
+                .OrderBy(match => match.StartTimeUtc)
+                .ToListAsync();
         }
 
-        public async Task<MatchModel> GetMatchByIdAsync(int matchId)
+        public async Task<MatchModel?> GetMatchByIdAsync(int matchId)
         {
-            return await _context.Matches.Include(m => m.HostTeam).Include(m => m.GuestTeam)
-                                         .FirstOrDefaultAsync(m => m.MatchId == matchId);
+            return await _context.Matches
+                .AsNoTracking()
+                .Include(match => match.HostTeam)
+                .Include(match => match.GuestTeam)
+                .Include(match => match.Season)
+                .Include(match => match.Round)
+                .FirstOrDefaultAsync(match => match.MatchId == matchId);
         }
 
-        public async Task AddMatchAsync(MatchModel match)
+        public async Task<MatchModel> AddMatchAsync(MatchModel match)
         {
             _context.Matches.Add(match);
             await _context.SaveChangesAsync();
+            var created = await GetMatchByIdAsync(match.MatchId);
+            return created ?? match;
         }
 
         public async Task UpdateMatchAsync(MatchModel match)
@@ -46,5 +74,4 @@ namespace SpeedwayTyperApp.Server.Repositories
             }
         }
     }
-
 }
