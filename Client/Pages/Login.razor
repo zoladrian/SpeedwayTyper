@@ -3,6 +3,7 @@
 @inject HttpClient Http
 @inject NavigationManager Navigation
 @inject CustomAuthStateProvider AuthStateProvider
+@inject IJSRuntime JSRuntime
 
 <div class="login-box">
     <div class="login-container">
@@ -38,10 +39,10 @@
         if (response.IsSuccessStatusCode)
         {
             var result = await response.Content.ReadFromJsonAsync<LoginResult>();
-            if (result != null)
+            if (!string.IsNullOrWhiteSpace(result?.Token))
             {
                 await AuthStateProvider.MarkUserAsAuthenticated(result.Token);
-                _errorMessage = string.Empty;
+                await JSRuntime.InvokeVoidAsync("localStorage.setItem", "authToken", result.Token);
                 Navigation.NavigateTo("/");
             }
         }

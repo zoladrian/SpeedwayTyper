@@ -1,24 +1,35 @@
 ﻿@page "/leaderboard"
+@attribute [Authorize]
 @using SpeedwayTyperApp.Shared.Models
 @inject HttpClient Http
 
-<div class="container">
-    <div class="banner"></div>
-    <h3>Tabela wyników</h3>
-    <RadzenGrid Data="@_users" class="custom-grid">
-        <Columns>
-            <RadzenGridColumn TItem="UserModel" Property="UserName" Title="Nazwa użytkownika" />
-            <RadzenGridColumn TItem="UserModel" Property="TotalPoints" Title="Punkty" />
-            <RadzenGridColumn TItem="UserModel" Property="AccurateMatchResults" Title="Dokładne wyniki" />
-        </Columns>
-    </RadzenGrid>
-</div>
+<AuthorizeView>
+    <Authorized>
+        <div class="container">
+            <div class="banner"></div>
+            <h3>Tabela wyników</h3>
+            <RadzenGrid Data="@_users" class="custom-grid" AllowPaging="true" AllowSorting="true" PageSize="15">
+                <Columns>
+                    <RadzenGridColumn TItem="UserModel" Title="#" Width="60px">
+                        <Template Context="user">@(_users.IndexOf(user) + 1)</Template>
+                    </RadzenGridColumn>
+                    <RadzenGridColumn TItem="UserModel" Property="UserName" Title="Nazwa użytkownika" />
+                    <RadzenGridColumn TItem="UserModel" Property="TotalPoints" Title="Punkty" />
+                    <RadzenGridColumn TItem="UserModel" Property="AccurateMatchResults" Title="Dokładne wyniki" />
+                </Columns>
+            </RadzenGrid>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <RedirectToLogin />
+    </NotAuthorized>
+</AuthorizeView>
 
 @code {
     private List<UserModel> _users = new List<UserModel>();
 
     protected override async Task OnInitializedAsync()
     {
-        _users = await Http.GetFromJsonAsync<List<UserModel>>("api/Users");
+        _users = await Http.GetFromJsonAsync<List<UserModel>>("api/leaderboard") ?? new List<UserModel>();
     }
 }

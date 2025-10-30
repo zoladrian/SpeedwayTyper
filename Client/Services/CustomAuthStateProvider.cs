@@ -88,31 +88,35 @@ namespace SpeedwayTyperApp.Client.Services
                 claims.Add(new Claim(ClaimTypes.NameIdentifier, nameId.ToString()!));
             }
 
-            if (keyValuePairs.TryGetValue(ClaimTypes.Role, out var roles) && roles != null)
+            if (name != null) claims.Add(new Claim(ClaimTypes.Name, name.ToString()));
+            if (nameId != null) claims.Add(new Claim(ClaimTypes.NameIdentifier, nameId.ToString()));
+            if (roles != null)
             {
-                switch (roles)
+                if (roles is JsonElement rolesElement)
                 {
-                    case JsonElement jsonElement when jsonElement.ValueKind == JsonValueKind.Array:
-                        foreach (var roleElement in jsonElement.EnumerateArray())
+                    if (rolesElement.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var role in rolesElement.EnumerateArray())
                         {
-                            var roleValue = roleElement.GetString();
+                            var roleValue = role.GetString();
                             if (!string.IsNullOrWhiteSpace(roleValue))
                             {
                                 claims.Add(new Claim(ClaimTypes.Role, roleValue));
                             }
                         }
-                        break;
-                    default:
-                        var rolesString = roles.ToString();
-                        if (!string.IsNullOrWhiteSpace(rolesString))
+                    }
+                    else
+                    {
+                        var singleRole = rolesElement.GetString();
+                        if (!string.IsNullOrWhiteSpace(singleRole))
                         {
-                            var splitRoles = rolesString.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                            foreach (var role in splitRoles)
-                            {
-                                claims.Add(new Claim(ClaimTypes.Role, role));
-                            }
+                            claims.Add(new Claim(ClaimTypes.Role, singleRole));
                         }
-                        break;
+                    }
+                }
+                else
+                {
+                    claims.Add(new Claim(ClaimTypes.Role, roles.ToString()));
                 }
             }
 

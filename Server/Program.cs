@@ -5,14 +5,14 @@ using Microsoft.IdentityModel.Tokens;
 using SpeedwayTyperApp.Server.DbContexts;
 using SpeedwayTyperApp.Server.Repositories;
 using SpeedwayTyperApp.Server.Services;
-using SpeedwayTyperApp.Shared.Models;
+using SpeedwayTyperApp.Server.Repositories;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<TypingContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddIdentity<UserModel, IdentityRole>()
     .AddEntityFrameworkStores<TypingContext>()
@@ -43,11 +43,11 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IMatchRepository, MatchRepository>();
-builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IPredictionRepository, PredictionRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IPredictionService, PredictionService>();
-builder.Services.AddScoped<IInviteRepository, InviteRepository>();
-builder.Services.AddScoped<IInviteService, InviteService>();
+builder.Services.AddScoped<ITeamRepository, TeamRepository>();
+builder.Services.AddScoped<IInvitationRepository, InvitationRepository>();
 
 builder.Services.AddSwaggerGen(c =>
 {

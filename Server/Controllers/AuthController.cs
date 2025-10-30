@@ -39,7 +39,7 @@ namespace SpeedwayTyperApp.Server.Controllers
 
             if (await _userManager.CheckPasswordAsync(user, model.Password))
             {
-                var token = _tokenService.GenerateToken(user);
+                var token = await _tokenService.GenerateTokenAsync(user);
                 return Ok(new { Token = token });
             }
 
