@@ -1,6 +1,8 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SpeedwayTyperApp.Server.DbContexts;
 using SpeedwayTyperApp.Shared.Models;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace SpeedwayTyperApp.Server.Repositories
 {
@@ -13,17 +15,25 @@ namespace SpeedwayTyperApp.Server.Repositories
             _context = context;
         }
 
+        public async Task<List<UserModel>> GetPendingUsersAsync()
+        {
+            return await _context.Users
+                .Where(u => u.IsPendingApproval)
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        public async Task<UserModel?> GetUserByIdAsync(string userId)
+        {
+            return await _context.Users.FindAsync(userId);
+        }
+
         public async Task<IEnumerable<UserModel>> GetAllUsersAsync()
         {
             return await _context.Users
-                                 .OrderByDescending(u => u.TotalPoints)
-                                 .ThenByDescending(u => u.AccurateMatchResults)
-                                 .ToListAsync();
-        }
-
-        public async Task<UserModel> GetUserByIdAsync(string userId)
-        {
-            return await _context.Users.FindAsync(userId);
+                                  .OrderByDescending(u => u.TotalPoints)
+                                  .ThenBy(u => u.UserName)
+                                  .ToListAsync();
         }
 
         public async Task UpdateUserAsync(UserModel user)
@@ -32,5 +42,4 @@ namespace SpeedwayTyperApp.Server.Repositories
             await _context.SaveChangesAsync();
         }
     }
-
 }

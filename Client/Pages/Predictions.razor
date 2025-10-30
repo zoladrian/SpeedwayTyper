@@ -1,0 +1,256 @@
+@page "/predictions"
+@attribute [Authorize]
+@inject HttpClient Http
+@inject NotificationService NotificationService
+
+<AuthorizeView>
+    <Authorized>
+        <div class="container">
+            <div class="banner"></div>
+            <h3>Twoje typy</h3>
+            <p class="text-muted">Podaj liczbę punktów dla gospodarzy lub gości - druga wartość uzupełni się automatycznie, tak aby suma wynosiła 90 (Auto-90).</p>
+
+            @if (_loading)
+            {
+                <p>Ładowanie danych...</p>
+            }
+            else if (_upcomingPredictions.Count == 0)
+            {
+                <p>Brak meczów dostępnych do typowania.</p>
+            }
+            else
+            {
+                <div class="prediction-list">
+                    @foreach (var item in _upcomingPredictions)
+                    {
+                        <div class="prediction-card">
+                            <h5>@item.Match.HostTeam?.Name vs @item.Match.GuestTeam?.Name</h5>
+                            <p class="text-muted">@item.Match.Date.ToLocalTime().ToString("dd.MM.yyyy HH:mm") • Runda @item.Match.Round</p>
+                            <EditForm Model="item.Input" OnValidSubmit="() => SavePredictionAsync(item)">
+                                <DataAnnotationsValidator />
+                                <ValidationSummary />
+                                <div class="score-inputs">
+                                    <div class="score-field">
+                                        <label>Punkty gospodarzy</label>
+                                        <RadzenNumeric @bind-Value="item.Input.HostTeamPredictedScore" TValue="int" Min="0" Max="90" Change="(int value) => OnHostScoreChanged(item, value)" Style="width:120px" />
+                                    </div>
+                                    <span class="score-separator">:</span>
+                                    <div class="score-field">
+                                        <label>Punkty gości</label>
+                                        <RadzenNumeric @bind-Value="item.Input.GuestTeamPredictedScore" TValue="int" Min="0" Max="90" Change="(int value) => OnGuestScoreChanged(item, value)" Style="width:120px" />
+                                    </div>
+                                </div>
+                                <div class="text-muted auto90-hint">Suma punktów zawsze wynosi 90. Wartość przeciwnej drużyny uzupełnia się automatycznie.</div>
+                                <RadzenButton Text="Zapisz typ" ButtonType="ButtonType.Submit" class="mt-2" IsDisabled="item.IsSaving" />
+                            </EditForm>
+                            @if (item.Prediction != null)
+                            {
+                                <div class="text-success mt-1">Ostatnio zapisano: @item.Prediction.HostTeamPredictedScore:@item.Prediction.GuestTeamPredictedScore</div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+
+            <h4 class="mt-4">Historia typów</h4>
+            <RadzenDataGrid TItem="MatchPredictionViewModel" Data="_completedPredictions" AllowPaging="true" PageSize="10" class="custom-grid">
+                <Columns>
+                    <RadzenGridColumn TItem="MatchPredictionViewModel" Title="Mecz">
+                        <Template Context="item">@item.Match.HostTeam?.Name vs @item.Match.GuestTeam?.Name</Template>
+                    </RadzenGridColumn>
+                    <RadzenGridColumn TItem="MatchPredictionViewModel" Title="Data">
+                        <Template Context="item">@item.Match.Date.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</Template>
+                    </RadzenGridColumn>
+                    <RadzenGridColumn TItem="MatchPredictionViewModel" Title="Twój typ">
+                        <Template Context="item">@GetPredictionLabel(item)</Template>
+                    </RadzenGridColumn>
+                    <RadzenGridColumn TItem="MatchPredictionViewModel" Title="Wynik meczu">
+                        <Template Context="item">@GetMatchResultLabel(item.Match)</Template>
+                    </RadzenGridColumn>
+                    <RadzenGridColumn TItem="MatchPredictionViewModel" Title="Punkty">
+                        <Template Context="item">@(item.Prediction?.PointsAwarded ?? 0)</Template>
+                    </RadzenGridColumn>
+                </Columns>
+            </RadzenDataGrid>
+        </div>
+    </Authorized>
+    <NotAuthorized>
+        <RedirectToLogin />
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private readonly List<MatchPredictionViewModel> _matchPredictions = new();
+    private readonly List<MatchPredictionViewModel> _upcomingPredictions = new();
+    private readonly List<MatchPredictionViewModel> _completedPredictions = new();
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        _loading = true;
+        StateHasChanged();
+
+        var matches = await Http.GetFromJsonAsync<List<MatchModel>>("api/matches") ?? new List<MatchModel>();
+        var predictions = await Http.GetFromJsonAsync<List<PredictionModel>>("api/predictions/my") ?? new List<PredictionModel>();
+
+        _matchPredictions.Clear();
+        foreach (var match in matches)
+        {
+            var prediction = predictions.FirstOrDefault(p => p.MatchId == match.MatchId);
+            var hostScore = prediction?.HostTeamPredictedScore ?? 45;
+            hostScore = Math.Clamp(hostScore, 0, 90);
+            var guestScore = 90 - hostScore;
+
+            var viewModel = new MatchPredictionViewModel
+            {
+                Match = match,
+                Prediction = prediction,
+                Input = new PredictionInputModel
+                {
+                    MatchId = match.MatchId,
+                    HostTeamPredictedScore = hostScore,
+                    GuestTeamPredictedScore = prediction?.GuestTeamPredictedScore ?? guestScore
+                }
+            };
+
+            EnsureAuto90(viewModel.Input, preferHost: true);
+            _matchPredictions.Add(viewModel);
+        }
+
+        var ordered = _matchPredictions.OrderBy(p => p.Match.Date).ThenBy(p => p.Match.MatchId).ToList();
+        _upcomingPredictions.Clear();
+        _upcomingPredictions.AddRange(ordered.Where(p => !p.Match.IsCompleted));
+        _completedPredictions.Clear();
+        _completedPredictions.AddRange(ordered.Where(p => p.Match.IsCompleted));
+
+        _loading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SavePredictionAsync(MatchPredictionViewModel item)
+    {
+        EnsureAuto90(item.Input, preferHost: true);
+        if (item.Input.HostTeamPredictedScore + item.Input.GuestTeamPredictedScore != 90)
+        {
+            NotificationService.Notify(NotificationSeverity.Warning, "Walidacja", "Suma punktów musi wynosić 90.");
+            return;
+        }
+
+        item.IsSaving = true;
+        try
+        {
+            var payload = new PredictionModel
+            {
+                PredictionId = item.Prediction?.PredictionId ?? 0,
+                MatchId = item.Match.MatchId,
+                HostTeamPredictedScore = item.Input.HostTeamPredictedScore,
+                GuestTeamPredictedScore = item.Input.GuestTeamPredictedScore
+            };
+
+            HttpResponseMessage response;
+            if (payload.PredictionId == 0)
+            {
+                response = await Http.PostAsJsonAsync("api/predictions", payload);
+                if (response.IsSuccessStatusCode)
+                {
+                    var created = await response.Content.ReadFromJsonAsync<PredictionModel>();
+                    if (created != null)
+                    {
+                        item.Prediction = created;
+                    }
+                }
+            }
+            else
+            {
+                response = await Http.PutAsJsonAsync($"api/predictions/{payload.PredictionId}", payload);
+                if (response.IsSuccessStatusCode)
+                {
+                    if (item.Prediction != null)
+                    {
+                        item.Prediction.HostTeamPredictedScore = payload.HostTeamPredictedScore;
+                        item.Prediction.GuestTeamPredictedScore = payload.GuestTeamPredictedScore;
+                    }
+                }
+            }
+
+            if (response.IsSuccessStatusCode)
+            {
+                NotificationService.Notify(NotificationSeverity.Success, "Zapisano", "Twój typ został zapisany.");
+            }
+            else
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Błąd zapisu", await response.Content.ReadAsStringAsync());
+            }
+        }
+        finally
+        {
+            item.IsSaving = false;
+            await LoadDataAsync();
+        }
+    }
+
+    private void OnHostScoreChanged(MatchPredictionViewModel item, int value)
+    {
+        item.Input.HostTeamPredictedScore = Math.Clamp(value, 0, 90);
+        item.Input.GuestTeamPredictedScore = 90 - item.Input.HostTeamPredictedScore;
+    }
+
+    private void OnGuestScoreChanged(MatchPredictionViewModel item, int value)
+    {
+        item.Input.GuestTeamPredictedScore = Math.Clamp(value, 0, 90);
+        item.Input.HostTeamPredictedScore = 90 - item.Input.GuestTeamPredictedScore;
+    }
+
+    private static void EnsureAuto90(PredictionInputModel input, bool preferHost)
+    {
+        input.HostTeamPredictedScore = Math.Clamp(input.HostTeamPredictedScore, 0, 90);
+        input.GuestTeamPredictedScore = Math.Clamp(input.GuestTeamPredictedScore, 0, 90);
+
+        if (preferHost)
+        {
+            input.GuestTeamPredictedScore = 90 - input.HostTeamPredictedScore;
+        }
+        else
+        {
+            input.HostTeamPredictedScore = 90 - input.GuestTeamPredictedScore;
+        }
+    }
+
+    private static string GetPredictionLabel(MatchPredictionViewModel item)
+    {
+        return item.Prediction == null
+            ? "—"
+            : $"{item.Prediction.HostTeamPredictedScore}:{item.Prediction.GuestTeamPredictedScore}";
+    }
+
+    private static string GetMatchResultLabel(MatchModel match)
+    {
+        return match.HostTeamScore.HasValue && match.GuestTeamScore.HasValue
+            ? $"{match.HostTeamScore}:{match.GuestTeamScore}"
+            : "—";
+    }
+
+    private class MatchPredictionViewModel
+    {
+        public MatchModel Match { get; set; } = default!;
+        public PredictionModel? Prediction { get; set; }
+        public PredictionInputModel Input { get; set; } = new();
+        public bool IsSaving { get; set; }
+    }
+
+    private class PredictionInputModel
+    {
+        public int MatchId { get; set; }
+
+        [Range(0, 90, ErrorMessage = "Wartość musi mieścić się w przedziale 0-90")]
+        public int HostTeamPredictedScore { get; set; }
+
+        [Range(0, 90, ErrorMessage = "Wartość musi mieścić się w przedziale 0-90")]
+        public int GuestTeamPredictedScore { get; set; }
+    }
+}

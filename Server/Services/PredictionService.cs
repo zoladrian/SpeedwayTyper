@@ -1,5 +1,6 @@
-﻿using SpeedwayTyperApp.Server.Repositories;
+using SpeedwayTyperApp.Server.Repositories;
 using SpeedwayTyperApp.Shared.Models;
+using System.Linq;
 
 namespace SpeedwayTyperApp.Server.Services
 {
@@ -122,6 +123,7 @@ namespace SpeedwayTyperApp.Server.Services
             {
                 return;
             }
+
             user.TotalPoints = totalPoints;
             user.AccurateMatchResults = totalAccurateResults;
             await _userRepository.UpdateUserAsync(user);

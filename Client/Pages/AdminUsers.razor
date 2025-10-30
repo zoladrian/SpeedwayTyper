@@ -1,0 +1,87 @@
+@page "/admin/users"
+@attribute [Authorize(Roles = "Admin")]
+@inject HttpClient Http
+
+<h3>Zarządzanie użytkownikami</h3>
+
+@if (!string.IsNullOrEmpty(_errorMessage))
+{
+    <div class="error-message">@_errorMessage</div>
+}
+
+<RadzenGrid Data="_pendingUsers" TItem="AdminUserModel" class="custom-grid">
+    <Columns>
+        <RadzenGridColumn TItem="AdminUserModel" Property="UserName" Title="Użytkownik" />
+        <RadzenGridColumn TItem="AdminUserModel" Property="Email" Title="Email" />
+        <RadzenGridColumn TItem="AdminUserModel" Title="Role">
+            <Template Context="user">
+                @string.Join(", ", user.Roles)
+            </Template>
+        </RadzenGridColumn>
+        <RadzenGridColumn TItem="AdminUserModel" Title="Akcje">
+            <Template Context="user">
+                <RadzenButton Text="Zatwierdź" Click="@(async () => await ApproveUser(user.Id))" Style="margin-right:5px" Disabled="@(!user.IsPendingApproval)" />
+                <RadzenButton Text="Promuj do Admin" Click="@(async () => await PromoteUser(user.Id))" ButtonStyle="ButtonStyle.Warning" Disabled="@user.Roles.Contains("Admin")" />
+            </Template>
+        </RadzenGridColumn>
+    </Columns>
+</RadzenGrid>
+
+@code {
+    private List<AdminUserModel> _pendingUsers = new();
+    private string _errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsers();
+    }
+
+    private async Task LoadUsers()
+    {
+        _errorMessage = string.Empty;
+        try
+        {
+            var data = await Http.GetFromJsonAsync<List<AdminUserModel>>("api/Admin/users/pending");
+            _pendingUsers = data ?? new List<AdminUserModel>();
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"Nie udało się pobrać użytkowników: {ex.Message}";
+        }
+    }
+
+    private async Task ApproveUser(string id)
+    {
+        var response = await Http.PostAsync($"api/Admin/users/{id}/approve", null);
+        if (response.IsSuccessStatusCode)
+        {
+            await LoadUsers();
+        }
+        else
+        {
+            var error = await response.Content.ReadAsStringAsync();
+            _errorMessage = string.IsNullOrWhiteSpace(error) ? "Nie udało się zatwierdzić użytkownika." : error;
+        }
+    }
+
+    private async Task PromoteUser(string id)
+    {
+        var response = await Http.PostAsync($"api/Admin/users/{id}/promote", null);
+        if (response.IsSuccessStatusCode)
+        {
+            await LoadUsers();
+        }
+        else
+        {
+            var error = await response.Content.ReadAsStringAsync();
+            _errorMessage = string.IsNullOrWhiteSpace(error) ? "Nie udało się awansować użytkownika." : error;
+        }
+    }
+}
+
+<style>
+    .error-message {
+        color: #dc3545;
+        margin-bottom: 10px;
+    }
+</style>

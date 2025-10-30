@@ -1,4 +1,5 @@
-﻿using Microsoft.IdentityModel.Tokens;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
 using SpeedwayTyperApp.Shared.Models;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
@@ -10,13 +11,15 @@ namespace SpeedwayTyperApp.Server.Services
     public class TokenService : ITokenService
     {
         private readonly IConfiguration _configuration;
+        private readonly UserManager<UserModel> _userManager;
 
-        public TokenService(IConfiguration configuration)
+        public TokenService(IConfiguration configuration, UserManager<UserModel> userManager)
         {
             _configuration = configuration;
+            _userManager = userManager;
         }
 
-        public string GenerateToken(UserModel user, IEnumerable<string> roles)
+        public async Task<string> GenerateTokenAsync(UserModel user)
         {
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -25,14 +28,11 @@ namespace SpeedwayTyperApp.Server.Services
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.UserName ?? string.Empty),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(ClaimTypes.NameIdentifier, user.Id ?? string.Empty)
+                new Claim(ClaimTypes.NameIdentifier, user.Id),
+                new Claim(ClaimTypes.Name, user.UserName ?? string.Empty)
             };
 
-            if (!string.IsNullOrEmpty(user.Email))
-            {
-                claims.Add(new Claim(JwtRegisteredClaimNames.Email, user.Email));
-            }
-
+            var roles = await _userManager.GetRolesAsync(user);
             foreach (var role in roles)
             {
                 claims.Add(new Claim(ClaimTypes.Role, role));
@@ -42,7 +42,7 @@ namespace SpeedwayTyperApp.Server.Services
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Issuer"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddHours(12),
+                expires: DateTime.UtcNow.AddDays(1),
                 signingCredentials: creds);
 
             return new JwtSecurityTokenHandler().WriteToken(token);

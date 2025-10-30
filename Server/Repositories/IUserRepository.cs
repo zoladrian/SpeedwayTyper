@@ -1,4 +1,5 @@
-﻿using SpeedwayTyperApp.Shared.Models;
+using System.Collections.Generic;
+using SpeedwayTyperApp.Shared.Models;
 
 namespace SpeedwayTyperApp.Server.Repositories
 {
@@ -6,7 +7,8 @@ namespace SpeedwayTyperApp.Server.Repositories
     {
         Task<IEnumerable<UserModel>> GetAllUsersAsync();
         Task<UserModel> GetUserByIdAsync(string userId);
+        Task<IEnumerable<UserModel>> GetAllUsersAsync();
         Task UpdateUserAsync(UserModel user);
+        Task<List<UserModel>> GetPendingUsersAsync();
     }
-
 }
