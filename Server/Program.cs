@@ -2,10 +2,11 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using SpeedwayTyperApp.Shared.Models;
-using SpeedwayTyperApp.Server.Services;
-using System.Text;
 using SpeedwayTyperApp.Server.DbContexts;
+using SpeedwayTyperApp.Server.Repositories;
+using SpeedwayTyperApp.Server.Services;
+using SpeedwayTyperApp.Shared.Models;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,7 +26,7 @@ builder.Services.AddAuthentication(options =>
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
 .AddJwtBearer(options =>
- {
+{
     options.RequireHttpsMetadata = false;
     options.SaveToken = true;
     options.TokenValidationParameters = new TokenValidationParameters
@@ -41,6 +42,12 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IMatchRepository, MatchRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IPredictionRepository, PredictionRepository>();
+builder.Services.AddScoped<IPredictionService, PredictionService>();
+builder.Services.AddScoped<IInviteRepository, InviteRepository>();
+builder.Services.AddScoped<IInviteService, InviteService>();
 
 builder.Services.AddSwaggerGen(c =>
 {
@@ -61,7 +68,7 @@ builder.Services.AddSwaggerGen(c =>
                 Reference = new Microsoft.OpenApi.Models.OpenApiReference
                 {
                     Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                    Id = "Bearer"
+                    Id = "Bearer",
                 }
             },
             new string[] {}
@@ -120,10 +127,16 @@ public static class SeedData
     public static async Task Initialize(UserManager<UserModel> userManager, RoleManager<IdentityRole> roleManager)
     {
         var adminRole = new IdentityRole("Admin");
+        var playerRole = new IdentityRole("Player");
 
         if (!await roleManager.RoleExistsAsync(adminRole.Name))
         {
             await roleManager.CreateAsync(adminRole);
+        }
+
+        if (!await roleManager.RoleExistsAsync(playerRole.Name))
+        {
+            await roleManager.CreateAsync(playerRole);
         }
 
         var adminUser = await userManager.FindByNameAsync("admin");
@@ -133,7 +146,8 @@ public static class SeedData
             {
                 UserName = "admin",
                 Email = "admin@example.com",
-                EmailConfirmed = true
+                EmailConfirmed = true,
+                IsPendingApproval = false
             };
 
             var result = await userManager.CreateAsync(adminUser, "4Wiezewhanowerze!");
@@ -142,6 +156,11 @@ public static class SeedData
             {
                 await userManager.AddToRoleAsync(adminUser, adminRole.Name);
             }
+        }
+        else if (adminUser.IsPendingApproval)
+        {
+            adminUser.IsPendingApproval = false;
+            await userManager.UpdateAsync(adminUser);
         }
     }
 }

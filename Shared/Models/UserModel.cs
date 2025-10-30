@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 
 namespace SpeedwayTyperApp.Shared.Models
 {
@@ -6,5 +6,6 @@ namespace SpeedwayTyperApp.Shared.Models
     {
         public int TotalPoints { get; set; }
         public int AccurateMatchResults { get; set; }
+        public bool IsPendingApproval { get; set; }
     }
 }

@@ -1,8 +1,9 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using SpeedwayTyperApp.Shared.Models;
 using SpeedwayTyperApp.Server.Services;
+using SpeedwayTyperApp.Shared.Models;
 
 namespace SpeedwayTyperApp.Server.Controllers
 {
@@ -11,14 +12,14 @@ namespace SpeedwayTyperApp.Server.Controllers
     public class AuthController : ControllerBase
     {
         private readonly UserManager<UserModel> _userManager;
-        private readonly SignInManager<UserModel> _signInManager;
         private readonly ITokenService _tokenService;
+        private readonly IInviteService _inviteService;
 
-        public AuthController(UserManager<UserModel> userManager, SignInManager<UserModel> signInManager, ITokenService tokenService)
+        public AuthController(UserManager<UserModel> userManager, ITokenService tokenService, IInviteService inviteService)
         {
             _userManager = userManager;
-            _signInManager = signInManager;
             _tokenService = tokenService;
+            _inviteService = inviteService;
         }
 
         [HttpPost("login")]
@@ -26,7 +27,17 @@ namespace SpeedwayTyperApp.Server.Controllers
         public async Task<IActionResult> Login([FromBody] LoginModel model)
         {
             var user = await _userManager.FindByNameAsync(model.Username);
-            if (user != null && await _userManager.CheckPasswordAsync(user, model.Password))
+            if (user == null)
+            {
+                return Unauthorized();
+            }
+
+            if (user.IsPendingApproval)
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, "Konto oczekuje na zatwierdzenie przez administratora.");
+            }
+
+            if (await _userManager.CheckPasswordAsync(user, model.Password))
             {
                 var token = _tokenService.GenerateToken(user);
                 return Ok(new { Token = token });
@@ -57,6 +68,41 @@ namespace SpeedwayTyperApp.Server.Controllers
             }
 
             return BadRequest(result.Errors);
+        }
+
+        [HttpPost("register-by-invite")]
+        [AllowAnonymous]
+        public async Task<IActionResult> RegisterByInvite([FromBody] RegisterByInviteModel model)
+        {
+            var validation = await _inviteService.ValidateInviteAsync(model.InviteCode);
+            if (!validation.Success)
+            {
+                return BadRequest(validation.ErrorMessage);
+            }
+
+            var user = new UserModel
+            {
+                UserName = model.Username,
+                Email = model.Email,
+                IsPendingApproval = true
+            };
+
+            var result = await _userManager.CreateAsync(user, model.Password);
+            if (!result.Succeeded)
+            {
+                return BadRequest(result.Errors);
+            }
+
+            await _userManager.AddToRoleAsync(user, "Player");
+
+            var consumeResult = await _inviteService.TryConsumeInviteAsync(model.InviteCode);
+            if (!consumeResult.Success)
+            {
+                await _userManager.DeleteAsync(user);
+                return BadRequest(consumeResult.ErrorMessage);
+            }
+
+            return Ok();
         }
     }
 }

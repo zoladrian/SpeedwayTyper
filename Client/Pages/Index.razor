@@ -1,4 +1,4 @@
-﻿@page "/"
+@page "/"
 @inject NavigationManager Navigation
 
 <div class="container">
@@ -13,6 +13,12 @@
                 <a class="nav-link" @onclick="NavigateToMatches">Mecze</a>
                 <a class="nav-link" @onclick="NavigateToLeaderboard">Tabela wyników</a>
                 <a class="nav-link" @onclick="NavigateToChangePassword">Zmień hasło</a>
+                <AuthorizeView Roles="Admin">
+                    <Authorized>
+                        <a class="nav-link" @onclick="NavigateToAdminInvites">Zaproszenia</a>
+                        <a class="nav-link" @onclick="NavigateToAdminUsers">Użytkownicy</a>
+                    </Authorized>
+                </AuthorizeView>
             </nav>
         </div>
     </div>
@@ -32,5 +38,15 @@
     private void NavigateToChangePassword()
     {
         Navigation.NavigateTo("/change-password");
+    }
+
+    private void NavigateToAdminInvites()
+    {
+        Navigation.NavigateTo("/admin/invites");
+    }
+
+    private void NavigateToAdminUsers()
+    {
+        Navigation.NavigateTo("/admin/users");
     }
 }

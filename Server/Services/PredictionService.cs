@@ -1,5 +1,6 @@
-﻿using SpeedwayTyperApp.Server.Repositories;
+using SpeedwayTyperApp.Server.Repositories;
 using SpeedwayTyperApp.Shared.Models;
+using System.Linq;
 
 namespace SpeedwayTyperApp.Server.Services
 {
@@ -100,6 +101,11 @@ namespace SpeedwayTyperApp.Server.Services
             var totalPoints = predictions.Sum(p => p.PointsAwarded);
             var totalAccurateResults = predictions.Count(a => a.AccurateResult);
             var user = await _userRepository.GetUserByIdAsync(userId);
+            if (user == null)
+            {
+                return;
+            }
+
             user.TotalPoints = totalPoints;
             user.AccurateMatchResults = totalAccurateResults;
             await _userRepository.UpdateUserAsync(user);
