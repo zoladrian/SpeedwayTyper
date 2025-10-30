@@ -24,6 +24,8 @@ Aplikacja składa się z trzech projektów `.NET 7`:
 - **Client** – klient Blazor WebAssembly.
 - **Shared** – współdzielone modele danych.
 
+> ℹ️ Endpointy obsługujące typowania zostały scalone w `api/picks`. Poprzednie ścieżki `api/predictions/...` nie są już dostępne.
+
 ### Wymagania wstępne
 
 - Docker 24+ oraz Docker Compose 2.20+.
