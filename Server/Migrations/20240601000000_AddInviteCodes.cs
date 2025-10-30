@@ -1,5 +1,6 @@
 using System;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -14,7 +15,7 @@ namespace SpeedwayTyperApp.Server.Migrations
             migrationBuilder.AddColumn<bool>(
                 name: "IsPendingApproval",
                 table: "AspNetUsers",
-                type: "bit",
+                type: "boolean",
                 nullable: false,
                 defaultValue: false);
 
@@ -22,13 +23,13 @@ namespace SpeedwayTyperApp.Server.Migrations
                 name: "InviteCodes",
                 columns: table => new
                 {
-                    InviteCodeId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Code = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
-                    MaxUses = table.Column<int>(type: "int", nullable: false),
-                    Uses = table.Column<int>(type: "int", nullable: false),
-                    ExpirationDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: false)
+                    InviteCodeId = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Code = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    MaxUses = table.Column<int>(type: "integer", nullable: false),
+                    Uses = table.Column<int>(type: "integer", nullable: false),
+                    ExpirationDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    CreatedById = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {

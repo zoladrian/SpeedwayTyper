@@ -5,7 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using SpeedwayTyperApp.Server.DbContexts;
 using SpeedwayTyperApp.Server.Repositories;
 using SpeedwayTyperApp.Server.Services;
-using SpeedwayTyperApp.Server.Repositories;
+using System.Security.Claims;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -56,6 +56,8 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IPredictionService, PredictionService>();
 builder.Services.AddScoped<ITeamRepository, TeamRepository>();
 builder.Services.AddScoped<IInvitationRepository, InvitationRepository>();
+builder.Services.AddScoped<IInviteRepository, InviteRepository>();
+builder.Services.AddScoped<IInviteService, InviteService>();
 
 builder.Services.AddSwaggerGen(c =>
 {
