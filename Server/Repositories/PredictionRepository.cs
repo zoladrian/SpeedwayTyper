@@ -1,7 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using SpeedwayTyperApp.Server.DbContexts;
 using SpeedwayTyperApp.Shared.Models;
-using System.Linq;
 
 namespace SpeedwayTyperApp.Server.Repositories
 {
@@ -57,5 +59,4 @@ namespace SpeedwayTyperApp.Server.Repositories
             await _context.SaveChangesAsync();
         }
     }
-
 }

@@ -1,4 +1,6 @@
-﻿using SpeedwayTyperApp.Shared.Models;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using SpeedwayTyperApp.Shared.Models;
 
 namespace SpeedwayTyperApp.Server.Repositories
 {
@@ -11,5 +13,4 @@ namespace SpeedwayTyperApp.Server.Repositories
         Task AddPredictionAsync(PredictionModel prediction);
         Task UpdatePredictionAsync(PredictionModel prediction);
     }
-
 }

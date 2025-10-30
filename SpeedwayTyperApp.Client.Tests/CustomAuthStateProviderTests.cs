@@ -1,10 +1,16 @@
 using Microsoft.JSInterop;
+using NUnit.Framework;
 using SpeedwayTyperApp.Client.Services;
+using System;
+using System.Collections.Generic;
 using System.Net;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SpeedwayTyperApp.Client.Tests
 {
@@ -79,6 +85,7 @@ namespace SpeedwayTyperApp.Client.Tests
 
         private static string Base64UrlEncode(string value)
         {
+            ArgumentNullException.ThrowIfNull(value);
             var bytes = Encoding.UTF8.GetBytes(value);
             return Convert.ToBase64String(bytes)
                 .TrimEnd('=')

@@ -6,11 +6,11 @@ namespace SpeedwayTyperApp.Server.DbContexts
 {
     public class TypingContext : IdentityDbContext<UserModel>
     {
-        public DbSet<TeamModel> Teams { get; set; }
-        public DbSet<MatchModel> Matches { get; set; }
-        public DbSet<PredictionModel> Predictions { get; set; }
-        public DbSet<InvitationModel> Invitations { get; set; }
-        public DbSet<InviteCodeModel> InviteCodes { get; set; }
+        public DbSet<TeamModel> Teams { get; set; } = null!;
+        public DbSet<MatchModel> Matches { get; set; } = null!;
+        public DbSet<PredictionModel> Predictions { get; set; } = null!;
+        public DbSet<InvitationModel> Invitations { get; set; } = null!;
+        public DbSet<InviteCodeModel> InviteCodes { get; set; } = null!;
 
         public TypingContext(DbContextOptions<TypingContext> options) : base(options)
         {
